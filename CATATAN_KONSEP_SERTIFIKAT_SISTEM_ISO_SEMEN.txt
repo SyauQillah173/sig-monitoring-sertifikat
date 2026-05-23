@@ -1,0 +1,236 @@
+CATATAN KONSEP SERTIFIKAT SISTEM ISO SEMEN
+SIG MONITORING SERTIFIKAT
+
+1. Sertifikat Sistem tetap masuk domain semen
+Sertifikat Sistem ISO di project ini tetap bagian dari monitoring semen. Bedanya, ISO 9001/14001/45001/50001/37001/27001 bukan sertifikat produk seperti SNI, TKDN, atau Green Label.
+
+Sertifikat Produk:
+- melekat ke merek/produk semen
+- contoh: SNI, TKDN, Green Label
+
+Sertifikat Sistem:
+- melekat ke pabrik/lokasi yang memproduksi semen
+- contoh: Pabrik Tuban punya ISO 9001, ISO 14001, ISO 45001, ISO 50001, ISO 37001, ISO 27001
+
+2. ISO masuk ke mana?
+ISO disimpan sebagai master standar sistem semen.
+
+Daftar awal:
+- ISO 9001 = Sistem Manajemen Mutu
+- ISO 14001 = Sistem Manajemen Lingkungan
+- ISO 45001 = Sistem Manajemen K3
+- ISO 50001 = Sistem Manajemen Energi
+- ISO 37001 = Sistem Manajemen Anti Penyuapan
+- ISO 27001 = Sistem Manajemen Keamanan Informasi
+
+3. Kenapa relasinya ke lokasi/pabrik?
+Karena ISO sistem manajemen biasanya menilai sistem kerja di lokasi/pabrik/perusahaan, bukan satu merek semen saja.
+
+Contoh:
+Pabrik Tuban memproduksi semen. Pabrik itu bisa punya ISO 9001 untuk mutu, ISO 14001 untuk lingkungan, dan ISO 45001 untuk K3.
+
+4. Apa arti Surveilen 1, Surveilen 2, dan Renewal?
+Itu adalah tahap audit/tindak lanjut sertifikat sistem ISO.
+
+- Surveilen 1: audit pengawasan pertama setelah sertifikat terbit.
+- Surveilen 2: audit pengawasan kedua.
+- Renewal: pembaruan sertifikat saat masa berlaku mendekati habis atau sudah habis.
+
+Tahap ini bukan jenis ISO baru. Tahap ini adalah status proses dari sertifikat ISO.
+
+5. Alur input di aplikasi
+1. Buka Pemeliharaan Data.
+2. Pastikan Master ISO Sistem Semen sudah ada.
+3. Pastikan Lokasi Pabrik sudah ada.
+4. Masuk ke Data Sertifikat Sistem ISO.
+5. Tambahkan sertifikat dengan memilih Lokasi/Pabrik dan Standar ISO.
+6. Isi nomor sertifikat, lembaga sertifikasi, tanggal terbit, berlaku sampai, tahap audit, scope, field korporasi, dan file sertifikat jika ada.
+
+Field korporasi yang tersedia:
+- Tahun perolehan
+- Level sertifikasi: nasional atau internasional
+- Kategori sertifikasi
+- Process owner
+- Nomor akreditasi
+- Public URL jika ada
+- Deskripsi
+
+Field tersebut boleh kosong agar data lama tetap aman. Jika nanti data asli sudah tersedia, admin bisa mengeditnya dari menu Data Sertifikat Sistem ISO.
+
+6. Cara membaca dashboard Sertifikat Sistem
+Halaman Sertifikat Sistem menampilkan kartu ISO.
+
+Setiap kartu menampilkan:
+- kode ISO
+- nama sistem manajemen
+- lokasi/pabrik
+- status masa berlaku
+- tahap audit
+- tanggal terbit sampai tanggal berlaku
+- progress masa berlaku
+- link dokumen jika file tersedia
+- semua kombinasi ISO + lokasi/pabrik yang ada di database, bukan hanya sertifikat terbaru per ISO
+
+7. Timeline Audit ISO
+Timeline audit ISO disimpan terpisah dari data utama sertifikat.
+
+Tabel:
+- sertifikat_sistem_audit_events
+
+Jenis event:
+- initial / sertifikasi awal
+- surveilen 1
+- surveilen 2
+- renewal
+
+Isi event:
+- tipe audit
+- target date
+- completed date
+- status
+- catatan
+- bukti file
+- user pelaksana
+
+Alur semi otomatis:
+- Saat sertifikat dibuat, sistem membuat timeline audit.
+- Target surveilen 1, surveilen 2, dan renewal dihitung dari tanggal terbit dan masa berlaku.
+- Admin/petugas tetap konfirmasi manual saat audit selesai.
+- Bukti audit bisa diupload dan disimpan private.
+- Konfirmasi surveilen menandai event selesai dan membuka tahap berikutnya.
+- Konfirmasi renewal membuat sertifikat baru dan timeline baru.
+
+8. Notifikasi tindak lanjut ISO
+Sistem sekarang mendukung notifikasi tindak lanjut untuk Sertifikat Sistem ISO.
+
+Jenis tindak lanjut:
+- Surveilen 1
+- Surveilen 2
+- Renewal
+
+Notifikasi muncul di dua tempat:
+- Email reminder.
+- Menu Notifikasi Internal di web.
+
+Isi notifikasi:
+- standar ISO
+- nama sistem manajemen
+- lokasi/pabrik
+- tanggal mulai/berlaku
+- tanggal target
+- jenis tindak lanjut
+- status
+- tombol aksi
+
+Tombol aksi:
+- Ubah Status S1 untuk Surveilen 1.
+- Ubah Status S2 untuk Surveilen 2.
+- Input Data Baru untuk Renewal.
+
+Keamanan:
+- Klik tombol email tidak langsung mengubah database.
+- User harus login dulu.
+- Hanya admin dan petugas yang boleh memproses.
+- Submit form memakai validasi server-side dan CSRF.
+- Bukti audit dan file sertifikat asli hanya bisa didownload oleh admin/petugas.
+- Guest tidak bisa download file asli atau bukti audit.
+
+9. Renewal tidak menghapus riwayat
+Jika tindak lanjut adalah Renewal, sistem tidak menimpa sertifikat lama.
+
+Alurnya:
+1. Admin/petugas klik Input Data Baru.
+2. Sistem membuka form renewal dengan data lama diprefill.
+3. User mengisi nomor sertifikat baru, tanggal baru, catatan/scope jika perlu, dan file sertifikat baru jika ada.
+4. Sistem membuat record sertifikat sistem baru.
+5. Sertifikat lama tetap menjadi riwayat.
+
+10. Tampilan publik sebelum login
+Landing sebelum login boleh menampilkan ringkasan ISO publik, tetapi tidak boleh menampilkan data rahasia.
+
+Admin mengatur dari:
+Pengaturan Sistem > Tampilan Publik
+
+Admin bisa menyembunyikan/menampilkan:
+- section Sertifikasi Sistem ISO
+- lokasi/pabrik
+- lembaga sertifikasi
+- scope
+- masa berlaku
+- status
+- tahun dan level
+- kategori sertifikasi
+
+Yang tetap tidak ditampilkan untuk guest:
+- nomor sertifikat
+- file sertifikat
+- bukti audit
+- catatan internal
+- path storage
+
+11. Audit log ISO
+Audit log ISO masuk ke tabel audit_logs.
+
+Action penting:
+- cement_system_certificate_downloaded
+- cement_system_audit_evidence_downloaded
+- created / updated / deleted untuk perubahan data sertifikat dan timeline
+- proses tindak lanjut surveilen/renewal
+
+Tujuan:
+- mengetahui siapa yang download file sensitif
+- mengetahui kapan file sensitif diakses
+- membantu audit internal dan investigasi keamanan
+
+12. APP_URL untuk link email
+Link di email dibuat dari APP_URL di file .env.
+
+Untuk testing lokal dengan server:
+
+http://127.0.0.1:8082
+
+maka .env harus:
+
+APP_URL=http://127.0.0.1:8082
+
+Jika link email masih mengarah ke localhost:8000, artinya email itu dibuat sebelum APP_URL diperbaiki. Kirim ulang email notifikasi setelah menjalankan:
+
+php artisan config:clear
+php artisan optimize:clear
+
+13. Kesimpulan
+SNI/TKDN/Green Label menjawab "produk semen ini punya sertifikat apa".
+ISO sistem menjawab "pabrik/lokasi yang memproduksi semen ini punya sistem manajemen ISO apa".
+Surveilen dan Renewal adalah tindak lanjut sertifikat sistem, bukan jenis ISO baru.
+Semua tindak lanjut masuk ke web proyek, bukan Google Form atau Spreadsheet.
+File ISO dan bukti audit adalah data sensitif, sehingga wajib private download, role-based access, audit log, dan tidak boleh bocor di landing publik.
+
+
+14. Update Terkini 23 Mei 2026
+Role sistem sekarang hanya admin dan petugas.
+
+Dampak untuk Sertifikat Sistem ISO:
+- Admin dan petugas tetap bisa melihat dashboard Sertifikat Sistem sesuai hak akses.
+- Admin dan petugas tetap bisa memproses tindak lanjut Surveilen 1, Surveilen 2, dan Renewal.
+- File sertifikat ISO dan bukti audit tetap private download.
+- Role pimpinan sudah dihapus dari enum, route, seeder, permission, menu, dan database lama lewat migration pembersih.
+
+Catatan tampilan:
+- Light mode sudah diperbaiki agar teks panel, flash message, badge, dan tombol tidak pucat.
+- Layout responsive sudah diperbaiki agar dashboard dan tabel tetap rapi di phone sampai desktop.
+- Aksi hapus/reset memakai modal konfirmasi aplikasi, bukan dialog browser.
+- Submit form memakai loading state agar user melihat proses simpan/hapus/backup sedang berjalan.
+
+Catatan integrasi data terbaru:
+- Perubahan Import Excel terbaru fokus pada sertifikat produk SNI, TKDN, dan Green Label.
+- Sertifikat Sistem ISO tetap memakai input/form web dan master ISO + lokasi pabrik.
+- Import Excel produk sekarang tidak membuat master baru otomatis, menolak typo/text bebas saat Preview Data, dan melewati data yang sudah ada agar tidak dobel.
+- Template Import Excel produk boleh diketik manual atau memakai dropdown, selama ejaan cocok dengan master/contoh.
+- Perubahan ini tidak mengubah alur Surveilen 1, Surveilen 2, Renewal, timeline audit ISO, atau private download file ISO.
+
+Catatan GitHub/CI terbaru:
+- Project sudah disimpan di GitHub pada branch main.
+- Workflow GitHub Actions sudah diperbaiki untuk lint dan test.
+- CI memakai PHP 8.3 dan 8.4.
+- Kredensial Flux dibuat opsional agar repo baru tetap bisa menjalankan CI walaupun secret FLUX_USERNAME dan FLUX_LICENSE_KEY belum diisi.
+- Verifikasi lokal terakhir tetap meliputi fitur ISO: php artisan test berhasil 108 passed dan 6 skipped.

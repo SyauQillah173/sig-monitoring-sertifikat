@@ -1,0 +1,795 @@
+PANDUAN MENJALANKAN APLIKASI
+SIG MONITORING SERTIFIKAT PRODUK DAN SISTEM SEMEN
+Lokasi proyek: C:\xampp\htdocs\SIG
+==================================================
+
+
+1. MASUK KE FOLDER PROYEK
+--------------------------------------------------
+Buka CMD atau PowerShell, lalu jalankan:
+
+cd /d C:\xampp\htdocs\SIG
+
+Jika berhasil, posisi terminal berada di:
+
+C:\xampp\htdocs\SIG>
+
+
+2. NYALAKAN XAMPP
+--------------------------------------------------
+Buka XAMPP Control Panel, lalu nyalakan:
+
+- Apache
+- MySQL
+
+Yang wajib untuk Laravel adalah MySQL.
+Apache boleh menyala, tetapi untuk development lebih disarankan memakai php artisan serve.
+
+
+3. BUAT DATABASE
+--------------------------------------------------
+Buka:
+
+http://localhost/phpmyadmin
+
+Buat database:
+
+monitoring_sertifikat
+
+
+4. CEK FILE .ENV
+--------------------------------------------------
+Pastikan konfigurasi utama seperti ini:
+
+APP_NAME="SIG Monitoring Sertifikat"
+APP_ENV=local
+APP_DEBUG=true
+APP_URL=http://127.0.0.1:8082
+
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=monitoring_sertifikat
+DB_USERNAME=root
+DB_PASSWORD=
+
+QUEUE_CONNECTION=sync
+FILESYSTEM_DISK=local
+
+MAIL_MAILER=log
+MAIL_FROM_ADDRESS="managementsystembpe@gmail.com"
+MAIL_FROM_NAME="${APP_NAME}"
+
+Catatan:
+- Jika password MySQL XAMPP kosong, biarkan DB_PASSWORD kosong.
+- MAIL_MAILER=log artinya email belum benar-benar dikirim, hanya dicatat ke log.
+- Jika memakai Gmail SMTP, MAIL_PASSWORD wajib App Password Gmail, bukan password login biasa.
+- Jika app password Gmail berisi spasi, hapus spasinya atau bungkus dengan tanda kutip.
+- APP_URL harus sama dengan alamat server yang sedang dipakai. Jika menjalankan server di 127.0.0.1:8082, APP_URL juga harus http://127.0.0.1:8082 agar link email notifikasi bisa dibuka.
+
+
+5. INSTALL DEPENDENCY
+--------------------------------------------------
+Jalankan:
+
+composer install
+npm install
+
+Kalau dependency sudah pernah diinstall, langkah ini biasanya tidak perlu diulang.
+
+
+6. GENERATE APP KEY
+--------------------------------------------------
+Jika APP_KEY di .env masih kosong, jalankan:
+
+php artisan key:generate
+
+
+7. MIGRASI DAN SEED DATABASE
+--------------------------------------------------
+Jalankan:
+
+php artisan migrate --seed
+
+Perintah ini membuat tabel dan mengisi data awal:
+
+- user admin dan petugas
+- role dan permission
+- kategori semen
+- merek semen
+- lokasi pabrik
+- master referensi semen
+- standar ISO sistem semen
+- data dummy sertifikat produk semen
+- data dummy sertifikat sistem semen
+- pengaturan email notifikasi awal
+- setting template sertifikat default
+- tabel CMS Pengaturan Sistem
+- tabel riwayat backup sistem
+
+Jika database sudah pernah ada dan hanya ingin menjalankan migrasi baru:
+
+php artisan migrate
+php artisan db:seed --class=CementMonitoringSeeder
+
+
+8. BUILD FRONTEND
+--------------------------------------------------
+Untuk build production asset:
+
+npm.cmd run build
+
+Untuk development aktif:
+
+npm.cmd run dev
+
+Jika memakai CMD biasa, bisa juga:
+
+npm run dev
+
+Jika PowerShell menolak npm.ps1, gunakan:
+
+npm.cmd run dev
+
+
+9. JALANKAN SERVER LARAVEL
+--------------------------------------------------
+Cara utama:
+
+php -d auto_prepend_file= -d max_execution_time=120 -S 127.0.0.1:8082 -t public
+
+Buka browser:
+
+http://127.0.0.1:8082
+
+Alternatif Laravel bawaan:
+
+php artisan serve
+
+Jika memakai php artisan serve, biasanya browser dibuka di:
+
+http://127.0.0.1:8000
+
+Jika terminal memakai PHP Herd dan muncul error lambat/timeout seperti
+"Maximum execution time of 30 seconds exceeded", gunakan command yang lebih aman:
+
+php -d auto_prepend_file= -d max_execution_time=120 -S 127.0.0.1:8082 -t public
+
+Buka:
+
+http://127.0.0.1:8082
+
+Jika memakai port 8082, pastikan .env berisi:
+
+APP_URL=http://127.0.0.1:8082
+
+Setelah mengubah APP_URL, jalankan:
+
+php artisan config:clear
+php artisan optimize:clear
+
+
+10. AKUN LOGIN AWAL
+--------------------------------------------------
+Admin:
+email: abdullahsyauqillah03@gmail.com
+password: Password123!
+
+Petugas:
+email: abdullahsyauqillah012@gmail.com
+password: Password123!
+
+Password bisa diganti setelah login atau lewat reset password kode email.
+
+
+11. MENU UTAMA SETELAH LOGIN
+--------------------------------------------------
+Menu aktif proyek sekarang:
+
+- Sertifikat Produk
+- Sertifikat Sistem
+- Pengaturan Akun
+- Notifikasi Internal
+- Pengaturan Sistem
+- Pemeliharaan Data
+- Import Excel
+- Export Data
+
+Pemeliharaan Data berisi:
+
+- Data Kategori Semen
+- Data Merek Semen
+- Data Lokasi Pabrik
+- Master SNI Semen
+- Master Komoditi / Jenis Semen
+- Master LSPro
+- Master Jenis Sertifikasi
+- Master Kemasan
+- Master Peringkat Green Label
+- Master Standar ISO Sistem Semen
+- Data Sertifikat Sistem Semen
+- Perusahaan Semen
+- Kontak Email Perusahaan
+- Pengaturan Email & Notifikasi
+- Template Sertifikat
+- Data Sertifikat SNI
+- Data Sertifikat TKDN
+- Data Green Label
+
+Pengaturan Sistem khusus admin berisi:
+
+- Konfigurasi Sistem
+- Manajemen User
+- Tampilan Publik
+- Menu Aplikasi
+- Backup & Maintenance
+- Email & Notifikasi
+- Template Sertifikat
+- Pemeliharaan Data
+
+Catatan:
+- Pengaturan Akun hanya untuk profil, password, security, dan 2FA akun yang sedang login.
+- Pengaturan Sistem adalah CMS admin untuk mengatur sistem global.
+- Petugas tidak bisa membuka Pengaturan Sistem.
+
+
+12. RESET PASSWORD DENGAN KODE EMAIL
+--------------------------------------------------
+Alur reset password:
+
+1. Klik "Lupa password?" di halaman login.
+2. Masukkan email login yang sudah didaftarkan admin.
+3. Sistem mengirim kode 6 digit ke email tersebut.
+4. Masukkan kode di halaman "Masukkan kode reset".
+5. Jika kode benar, sistem membuka halaman password baru.
+6. Isi password baru dan konfirmasi password.
+
+Jika muncul pesan kode gagal dikirim:
+- Cek MAIL_MAILER, MAIL_HOST, MAIL_PORT, MAIL_USERNAME, MAIL_PASSWORD.
+- Pastikan Gmail memakai App Password.
+- Jalankan:
+
+php artisan config:clear
+
+
+13. SETTING EMAIL SMTP
+--------------------------------------------------
+Default aplikasi memakai:
+
+MAIL_MAILER=log
+
+Artinya email reset password dan email notifikasi belum benar-benar keluar.
+
+Jika ingin memakai Gmail sementara, isi .env seperti ini:
+
+MAIL_MAILER=smtp
+MAIL_SCHEME=null
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USERNAME=managementsystembpe@gmail.com
+MAIL_PASSWORD=ISI_APP_PASSWORD_GMAIL
+MAIL_FROM_ADDRESS="managementsystembpe@gmail.com"
+MAIL_FROM_NAME="${APP_NAME}"
+
+Penting:
+- Jangan tulis password SMTP di file dokumentasi.
+- Gunakan App Password Gmail, bukan password login biasa.
+- App Password Gmail dibuat dari Google Account > Security > App passwords.
+- Setelah mengubah .env, jalankan:
+
+php artisan config:clear
+
+Lalu test dari menu:
+
+Pemeliharaan Data > Pengaturan Email & Notifikasi > Test Email
+
+Test koneksi SMTP dari PowerShell Windows:
+
+Test-NetConnection smtp.gmail.com -Port 587
+
+Kalau TcpTestSucceeded True, jaringan bisa menjangkau Gmail SMTP.
+
+
+14. NOTIFIKASI OTOMATIS
+--------------------------------------------------
+Command internal lama:
+
+php artisan notifications:generate-certificate-expiry
+
+Command email sertifikat semen:
+
+php artisan cement:send-certificate-email-notifications
+
+Fitur terbaru notifikasi ISO:
+- Sistem membaca data Sertifikat Sistem ISO Semen.
+- Notifikasi internal dibuat untuk user role admin dan petugas.
+- Email reminder menampilkan tabel seperti contoh lama: ISO, lokasi/pabrik, tanggal berlaku, jenis tindak lanjut, status, dan aksi.
+- Tombol aksi email/internal:
+  - Ubah Status S1
+  - Ubah Status S2
+  - Input Data Baru untuk Renewal
+- Tombol dari email tidak langsung mengubah data. Tombol membuka form konfirmasi di web agar aman.
+- Jika belum login, user diarahkan login dulu.
+- Hanya admin dan petugas yang dapat mengakses dashboard aplikasi sesuai hak aksesnya.
+
+Route tindak lanjut ISO:
+- /sertifikat-sistem/{id}/tindak-lanjut/surveilen_1
+- /sertifikat-sistem/{id}/tindak-lanjut/surveilen_2
+- /sertifikat-sistem/{id}/tindak-lanjut/renewal
+
+Cara test manual:
+
+1. Pastikan server jalan di alamat yang sama dengan APP_URL.
+2. Jalankan:
+
+   php artisan cement:send-certificate-email-notifications
+
+3. Buka email terbaru yang masuk.
+4. Klik Ubah Status S1, Ubah Status S2, atau Input Data Baru.
+5. Login sebagai admin/petugas jika diminta.
+6. Form tindak lanjut harus terbuka di web.
+
+Catatan:
+- Email lama tidak berubah otomatis jika APP_URL sebelumnya salah.
+- Setelah memperbaiki APP_URL, wajib kirim ulang email notifikasi.
+- Untuk lokal sekarang gunakan APP_URL=http://127.0.0.1:8082 jika server aktif di 8082.
+
+Schedule otomatis ada di:
+
+routes/console.php
+
+Untuk server production, scheduler Laravel perlu dijalankan oleh cron/Task Scheduler.
+Untuk development lokal, command bisa dijalankan manual.
+
+Untuk menjalankan scheduler lokal selama development:
+
+php artisan schedule:work
+
+Jika hanya ingin menjalankan command notifikasi manual:
+
+php artisan notifications:generate-certificate-expiry
+php artisan cement:send-certificate-email-notifications
+
+
+15. TWO FACTOR AUTHENTICATION / 2FA
+--------------------------------------------------
+2FA memakai Laravel Fortify berbasis TOTP/authenticator app.
+
+Aplikasi yang bisa dipakai:
+- Google Authenticator
+- Microsoft Authenticator
+- Authy
+- aplikasi lain yang mendukung TOTP
+
+Alur:
+1. Login.
+2. Buka Pengaturan Akun > Keamanan.
+3. Aktifkan Two Factor Authentication.
+4. Scan QR Code dengan aplikasi authenticator.
+5. Masukkan kode dari aplikasi untuk konfirmasi.
+6. Simpan recovery code.
+
+Jika 2FA sudah aktif dan terkonfirmasi:
+- Saat login berikutnya, setelah password benar, sistem otomatis meminta kode 2FA.
+- User bisa memakai recovery code jika HP/authenticator tidak bisa diakses.
+
+Catatan:
+- Kode email/Gmail saat ini dipakai untuk reset password, bukan metode 2FA login.
+- Jika nanti ingin 2FA via email OTP, perlu dibuat fitur tambahan.
+
+
+16. FILE SERTIFIKAT DAN DOWNLOAD PRIVATE
+--------------------------------------------------
+File sertifikat asli dianggap sensitif.
+
+Aturan sekarang:
+- File sertifikat tidak boleh diakses langsung hanya dengan link public /storage.
+- Download file sertifikat asli harus lewat route controller yang mewajibkan login dan role sesuai.
+- Dokumen ringkasan sertifikat PDF dibuat oleh sistem dari data database.
+- File sertifikat ISO dan bukti audit ISO hanya boleh didownload admin/petugas.
+- Guest tidak bisa download file asli ISO atau bukti audit.
+- Semua download file sensitif dicatat di audit_logs.
+
+Jika upload lama tidak muncul, pastikan folder storage dan permission benar.
+
+
+17. TEMPLATE SERTIFIKAT
+--------------------------------------------------
+Template sertifikat adalah gambar background untuk dokumen ringkasan PDF.
+
+Default template:
+
+public/images/Sertifikat.jpg
+
+Admin bisa upload template baru dari:
+
+Pemeliharaan Data > Template Sertifikat
+
+Ketentuan:
+- Format: JPG, JPEG, PNG, WEBP.
+- Maksimal 12 MB.
+- Disarankan portrait A4.
+- Area tengah sebaiknya kosong agar teks data sertifikat terbaca.
+- Upload template hanya mengganti background, data sertifikat tetap otomatis dari database.
+
+Download dokumen bisa dicoba dari:
+- Sertifikat Produk > tombol Dokumen pada baris sertifikat.
+- Sertifikat Sistem > tombol Dokumen pada kartu ISO.
+
+
+18. IMPORT EXCEL
+--------------------------------------------------
+Konsep terbaru:
+- Admin mengisi data di template Excel.
+- Saat import berhasil, ID dibuat otomatis oleh database.
+- Admin tidak perlu mengetik ID database.
+- Template Excel memiliki 2 baris contoh pada setiap sheet sertifikat.
+- Dropdown master tersedia sebagai bantuan, tetapi user tetap boleh mengetik manual.
+- Jika ketikan manual tidak ada di dropdown, Excel hanya memberi warning.
+- Sistem mencocokkan field master berdasarkan nama saat Preview Data.
+- Jika nilai tidak cocok master aktif, preview import menolak data agar typo/text bebas tidak masuk database.
+- Jika master belum ada, tambahkan dulu lewat Pemeliharaan Data.
+- Import tidak membuat master baru otomatis.
+- Preview import juga mencegah data dobel.
+- Jika data sudah ada di sistem atau dobel di file Excel, data tersebut dilewati dan hanya data baru yang disimpan.
+- Kolom file_sertifikat opsional. Untuk import biasa kosongkan dulu, lalu upload PDF/JPG/PNG dari menu Edit Sertifikat setelah data berhasil disimpan.
+
+Menu:
+
+Import Excel
+
+Sheet yang didukung:
+- Sertifikat SNI
+- Sertifikat TKDN
+- Sertifikat Green Label
+
+Alur import yang disarankan:
+1. Buka Import Excel.
+2. Klik Download Template.
+3. Isi data dengan memilih dropdown atau mengetik manual sesuai contoh/master.
+4. Hapus/ganti baris contoh jika tidak ingin ikut diimport.
+5. Kosongkan file_sertifikat untuk import biasa.
+6. Upload file Excel.
+7. Klik Preview Data.
+8. Perbaiki error jika ada typo/master belum tersedia.
+9. Klik Simpan Semua.
+
+
+19. BACKUP & MAINTENANCE SISTEM
+--------------------------------------------------
+Menu:
+
+Pengaturan Sistem > Backup & Maintenance
+
+Fungsi:
+- Membuat backup manual dari web admin.
+- Menampilkan riwayat backup.
+- Download file backup.
+- Hapus backup.
+- Cleanup backup lama.
+- Mengatur backup otomatis, retensi hari, dan maksimal jumlah backup.
+- Health check sederhana untuk warning production dan relasi data.
+
+File backup disimpan private di:
+
+storage/app/private/backups
+
+Tabel riwayat backup:
+
+database_backups
+
+Command backup manual dari terminal:
+
+php artisan system:backup --force
+
+Command backup otomatis:
+
+php artisan system:backup
+
+Command cleanup:
+
+php artisan system:backup-cleanup
+
+Schedule otomatis:
+- Backup setiap hari jam 01:30.
+- Cleanup setiap Senin jam 02:30.
+
+Untuk membuat schedule berjalan terus saat lokal:
+
+php artisan schedule:work
+
+Untuk production:
+- Pasang cron/Task Scheduler agar menjalankan php artisan schedule:run setiap menit.
+
+Catatan MySQL/XAMPP:
+- Backup MySQL memakai mysqldump.
+- XAMPP Windows biasanya memakai:
+  C:\xampp\mysql\bin\mysqldump.exe
+- Jika mysqldump tidak ditemukan, tambahkan di .env:
+  BACKUP_MYSQLDUMP_PATH=C:\xampp\mysql\bin\mysqldump.exe
+
+Keamanan backup:
+- File backup tidak boleh dipindah ke public folder.
+- Download backup hanya untuk admin.
+- Download/hapus backup tercatat di audit log.
+- Jika backup menyertakan file private, isinya termasuk file sertifikat dan bukti audit.
+
+
+20. CMS TAMPILAN PUBLIK DAN MENU APLIKASI
+--------------------------------------------------
+Tampilan Publik:
+- Mengatur brand, badge, judul hero, deskripsi, value point, footer.
+- Mengatur section landing sebelum login.
+- Mengatur privasi field ISO publik.
+
+Privasi ISO publik yang bisa diatur:
+- lokasi/pabrik
+- lembaga sertifikasi
+- scope
+- masa berlaku
+- status
+- tahun dan level
+- kategori sertifikasi
+
+Yang tidak tampil di landing:
+- nomor sertifikat
+- file sertifikat
+- bukti audit
+- catatan internal
+- path storage
+
+Menu Aplikasi:
+- Mengatur group menu.
+- Mengatur label menu.
+- Mengatur icon dari daftar yang sudah disediakan.
+- Mengatur urutan.
+- Mengatur role yang boleh melihat menu.
+- Mengatur aktif/nonaktif menu.
+
+Route menu dibuat fixed agar tidak salah diubah dari UI.
+
+
+21. URUTAN PALING AMAN UNTUK MENJALANKAN
+--------------------------------------------------
+1. Nyalakan MySQL di XAMPP.
+2. Masuk folder proyek:
+   cd /d C:\xampp\htdocs\SIG
+3. Jalankan:
+   composer install
+4. Jalankan:
+   npm install
+5. Jalankan:
+   php artisan key:generate
+6. Jalankan:
+   php artisan migrate --seed
+7. Jalankan:
+   npm.cmd run build
+8. Jalankan:
+   php -d auto_prepend_file= -d max_execution_time=120 -S 127.0.0.1:8082 -t public
+9. Buka:
+   http://127.0.0.1:8082
+
+
+22. PERINTAH CEK DAN TEST
+--------------------------------------------------
+Build frontend:
+
+npm.cmd run build
+
+Test Laravel:
+
+php artisan test
+
+Clear cache:
+
+php artisan optimize:clear
+php artisan config:clear
+
+Lihat route:
+
+php artisan route:list
+
+Status migrasi:
+
+php artisan migrate:status
+
+Backup test:
+
+php artisan system:backup --force
+
+
+23A. GIT DAN GITHUB
+--------------------------------------------------
+Project sudah bisa disimpan ke GitHub.
+
+Repository saat ini:
+
+https://github.com/SyauQillah173/sig-monitoring-sertifikat
+
+Command dasar:
+
+git status
+git add .
+git commit -m "pesan commit"
+git push
+
+Catatan keamanan:
+- .env tidak boleh ikut GitHub.
+- vendor dan node_modules tidak perlu diupload.
+- public/build ignored karena bisa dibuat ulang dengan npm.cmd run build.
+- database/database.sqlite lokal ignored.
+- storage log, cache, session, backup private, dan file private ignored.
+
+Jika ingin mengecek file yang ikut Git:
+
+git ls-files
+
+Jika ingin mengecek file ignored:
+
+git status --short --ignored
+
+
+23B. GITHUB ACTIONS / CI
+--------------------------------------------------
+Workflow GitHub Actions:
+
+.github/workflows/lint.yml
+.github/workflows/tests.yml
+
+Lint workflow:
+- PHP 8.4
+- composer install
+- npm install
+- composer lint:check
+
+Tests workflow:
+- PHP 8.3 dan 8.4
+- Node 22
+- npm install
+- composer install
+- copy .env.example ke .env
+- php artisan key:generate
+- npm run build
+- ./vendor/bin/phpunit
+
+Catatan Flux:
+- Project memakai livewire/flux.
+- Jika repo GitHub belum punya secret FLUX_USERNAME dan FLUX_LICENSE_KEY, step composer auth Flux akan dilewati.
+- Jika nanti butuh dependency private Flux, tambahkan secrets tersebut di GitHub:
+  Settings > Secrets and variables > Actions > New repository secret
+
+Perbaikan CI terbaru:
+- actions/checkout diturunkan ke v4.
+- actions/setup-node diturunkan ke v4.
+- PHP 8.5 dikeluarkan dari matrix test.
+- composer lint:check dipakai agar CI hanya mengecek format, bukan mengubah file.
+
+
+23. ERROR YANG SERING MUNCUL
+--------------------------------------------------
+Error "Unknown database monitoring_sertifikat":
+- Database belum dibuat di phpMyAdmin.
+
+Error "could not find driver":
+- Ekstensi pdo_mysql PHP belum aktif.
+
+Error "Connection refused":
+- MySQL belum menyala.
+
+Error "Vite manifest not found":
+- Jalankan npm install lalu npm.cmd run build.
+
+Error "npm.ps1 cannot be loaded":
+- Gunakan npm.cmd run dev atau CMD biasa.
+
+Error "Failed to listen on 127.0.0.1:8000":
+- Port dipakai aplikasi lain.
+- Pakai alternatif:
+  php -S 127.0.0.1:8082 -t public
+
+Error "Maximum execution time of 30 seconds exceeded" saat membuka halaman:
+- Biasanya terjadi karena cache Laravel/Composer sedang berat atau PHP Herd memasang auto_prepend_file.
+- Stop server dengan Ctrl+C.
+- Jalankan:
+  php artisan optimize:clear
+- Jika masih lambat, jalankan server dengan:
+  php -d auto_prepend_file= -d max_execution_time=120 -S 127.0.0.1:8082 -t public
+- Jika ada proses PHP/Composer lama yang menggantung, tutup dari Task Manager atau restart terminal.
+
+Error dotenv "unexpected whitespace" pada MAIL_PASSWORD:
+- App password Gmail mengandung spasi.
+- Hapus spasi atau bungkus value dengan tanda kutip.
+- Jalankan php artisan config:clear.
+
+Email tidak terkirim:
+- Cek MAIL_MAILER.
+- Cek MAIL_HOST, MAIL_PORT, MAIL_USERNAME, MAIL_PASSWORD.
+- Jalankan php artisan config:clear.
+- Pastikan email otomatis di menu Pengaturan Email & Notifikasi sudah aktif.
+
+Backup gagal karena mysqldump tidak ditemukan:
+- Pastikan XAMPP MySQL terinstall.
+- Cek file:
+  C:\xampp\mysql\bin\mysqldump.exe
+- Tambahkan ke .env:
+  BACKUP_MYSQLDUMP_PATH=C:\xampp\mysql\bin\mysqldump.exe
+- Jalankan:
+  php artisan config:clear
+
+Backup otomatis tidak jalan:
+- Scheduler belum aktif.
+- Untuk lokal jalankan:
+  php artisan schedule:work
+- Untuk production pasang cron/Task Scheduler untuk:
+  php artisan schedule:run
+
+
+24. CATATAN KEAMANAN PRODUKSI
+--------------------------------------------------
+Untuk production:
+
+APP_ENV=production
+APP_DEBUG=false
+APP_URL=https://domain-resmi
+SESSION_SECURE_COOKIE=true
+
+Gunakan HTTPS, backup database, SMTP resmi, password kuat, App Password atau SMTP resmi, dan batasi akses admin.
+Jangan memakai DB_USERNAME=root tanpa password pada production.
+Jangan menyimpan .env, file backup, atau file sertifikat private di folder public.
+Aktifkan scheduler agar backup otomatis, notifikasi internal, dan email reminder berjalan.
+Lihat detail di:
+
+CATATAN_KEAMANAN_ISO27001.txt
+
+
+25. UPDATE TERKINI 23 MEI 2026
+--------------------------------------------------
+Role login yang berlaku sekarang:
+- Admin
+- Petugas
+
+Role pimpinan sudah dihapus dari sistem.
+
+Jika project lama sudah pernah memiliki user/role pimpinan, jalankan:
+
+php artisan migrate --force
+
+Migration terbaru akan:
+- menghapus user dengan role pimpinan
+- menghapus role Spatie pimpinan
+- membersihkan relasi model_has_roles dan role_has_permissions
+- membersihkan allowed_roles pimpinan dari navigation_items
+
+Catatan akun awal setelah migrate --seed:
+- Admin SIG: abdullahsyauqillah03@gmail.com
+- Petugas SIG: abdullahsyauqillah012@gmail.com
+- Password default: Password123!
+
+Catatan UI terbaru:
+- Light mode sudah diperbaiki agar teks alert, menu, badge, tombol, dan card lebih terbaca.
+- Flash message seperti "Cleanup selesai" sekarang memakai teks hijau tua di light mode.
+- Hapus/reset memakai modal konfirmasi aplikasi, bukan popup browser.
+- Tombol simpan/hapus/backup menampilkan loading/spinner setelah submit.
+- Layout sudah diperbaiki untuk phone, tablet, laptop, dan PC.
+
+Perintah cek setelah update:
+
+npm.cmd run build
+php artisan test
+
+Hasil verifikasi terakhir:
+- Build frontend berhasil.
+- composer lint:check berhasil.
+- Build frontend berhasil.
+- Test Laravel terakhir berhasil: 108 passed, 6 skipped.
+- Test Import Excel terakhir berhasil: 8 passed.
+
+Catatan Import Excel terbaru:
+- Template boleh diketik manual, tidak wajib klik dropdown.
+- Dropdown tetap membantu agar ejaan sesuai master.
+- Text bebas/typo tetap ditolak di Preview Data.
+- Master baru tidak dibuat otomatis dari import.
+- Data yang sudah ada di sistem tidak masuk lagi, hanya data baru yang disimpan.
+
+
+SELESAI
