@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Models\DatabaseBackup;
 use App\Models\SystemSetting;
 use App\Models\User;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
@@ -345,10 +344,10 @@ class SystemBackupService
         fwrite($handle, "PRAGMA foreign_keys=OFF;\nBEGIN TRANSACTION;\n\n");
 
         foreach ($tables as $table) {
-            fwrite($handle, "DROP TABLE IF EXISTS ".$this->quoteIdentifier($table->name).";\n");
+            fwrite($handle, 'DROP TABLE IF EXISTS '.$this->quoteIdentifier($table->name).";\n");
             fwrite($handle, $table->sql.";\n\n");
 
-            $columns = collect($connection->select("PRAGMA table_info(".$this->quoteIdentifier($table->name).')'))
+            $columns = collect($connection->select('PRAGMA table_info('.$this->quoteIdentifier($table->name).')'))
                 ->pluck('name')
                 ->values();
 
@@ -385,7 +384,7 @@ class SystemBackupService
         $relativePath = self::BACKUP_DIR.'/'.$baseName.'.zip';
         $absolutePath = Storage::disk('local')->path($relativePath);
         File::ensureDirectoryExists(dirname($absolutePath));
-        $zip = new ZipArchive();
+        $zip = new ZipArchive;
 
         if ($zip->open($absolutePath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
             throw new RuntimeException('File ZIP backup tidak bisa dibuat.');

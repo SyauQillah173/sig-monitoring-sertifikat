@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Enums\UserRole;
 use App\Models\Category;
-use App\Models\Certificate;
 use App\Models\CertificateType;
 use App\Models\Issuer;
 use App\Models\Product;

@@ -4,6 +4,9 @@ namespace App\Http\Controllers\Cement;
 
 use App\Http\Controllers\Controller;
 use App\Models\CementReferenceValue;
+use App\Models\SertifikatGreenLabel;
+use App\Models\SertifikatSni;
+use App\Models\SertifikatTkdn;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -131,19 +134,19 @@ class CementReferenceController extends Controller
                 || $this->existsInCertificateIds('sni_reference_id', $reference->id),
             CementReferenceValue::TYPE_KOMODITI => $this->existsInCertificates('komoditi', $reference->name)
                 || $this->existsInCertificateIds('komoditi_reference_id', $reference->id),
-            CementReferenceValue::TYPE_LSPRO => \App\Models\SertifikatSni::query()
+            CementReferenceValue::TYPE_LSPRO => SertifikatSni::query()
                 ->where('lspro_reference_id', $reference->id)
                 ->orWhere('lspro', $reference->name)
                 ->exists(),
-            CementReferenceValue::TYPE_JENIS_SERTIFIKASI => \App\Models\SertifikatSni::query()
+            CementReferenceValue::TYPE_JENIS_SERTIFIKASI => SertifikatSni::query()
                 ->where('jenis_sertifikasi_reference_id', $reference->id)
                 ->orWhere('jenis_sertifikasi', $reference->name)
                 ->exists(),
-            CementReferenceValue::TYPE_KEMASAN => \App\Models\SertifikatTkdn::query()
+            CementReferenceValue::TYPE_KEMASAN => SertifikatTkdn::query()
                 ->where('kemasan_reference_id', $reference->id)
                 ->orWhere('kemasan', $reference->name)
                 ->exists(),
-            CementReferenceValue::TYPE_PERINGKAT_GREEN_LABEL => \App\Models\SertifikatGreenLabel::query()
+            CementReferenceValue::TYPE_PERINGKAT_GREEN_LABEL => SertifikatGreenLabel::query()
                 ->where('peringkat_green_label_reference_id', $reference->id)
                 ->orWhere('peringkat', $reference->name)
                 ->exists(),
@@ -153,15 +156,15 @@ class CementReferenceController extends Controller
 
     private function existsInCertificates(string $column, string $value): bool
     {
-        return \App\Models\SertifikatSni::query()->where($column, $value)->exists()
-            || \App\Models\SertifikatTkdn::query()->where($column, $value)->exists()
-            || \App\Models\SertifikatGreenLabel::query()->where($column, $value)->exists();
+        return SertifikatSni::query()->where($column, $value)->exists()
+            || SertifikatTkdn::query()->where($column, $value)->exists()
+            || SertifikatGreenLabel::query()->where($column, $value)->exists();
     }
 
     private function existsInCertificateIds(string $column, int $value): bool
     {
-        return \App\Models\SertifikatSni::query()->where($column, $value)->exists()
-            || \App\Models\SertifikatTkdn::query()->where($column, $value)->exists()
-            || \App\Models\SertifikatGreenLabel::query()->where($column, $value)->exists();
+        return SertifikatSni::query()->where($column, $value)->exists()
+            || SertifikatTkdn::query()->where($column, $value)->exists()
+            || SertifikatGreenLabel::query()->where($column, $value)->exists();
     }
 }

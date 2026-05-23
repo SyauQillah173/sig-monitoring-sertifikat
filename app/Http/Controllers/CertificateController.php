@@ -5,12 +5,12 @@ namespace App\Http\Controllers;
 use App\Http\Requests\Certificate\StoreCertificateRequest;
 use App\Http\Requests\Certificate\UpdateCertificateRequest;
 use App\Models\Certificate;
+use App\Services\AuditLogger;
 use App\Services\Certificates\CertificateService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use App\Services\AuditLogger;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Throwable;
 

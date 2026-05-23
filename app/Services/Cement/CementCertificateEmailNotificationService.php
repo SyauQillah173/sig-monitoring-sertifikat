@@ -10,6 +10,7 @@ use App\Models\SertifikatSistemSemen;
 use App\Services\AuditLogger;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Mail;
 use Throwable;
 
@@ -98,8 +99,8 @@ class CementCertificateEmailNotificationService
     }
 
     /**
-     * @param  EloquentCollection<int, SertifikatSistemSemen>|\Illuminate\Support\Collection<int, SertifikatSistemSemen>  $certificates
-     * @return \Illuminate\Support\Collection<int, array<string, mixed>>
+     * @param  EloquentCollection<int, SertifikatSistemSemen>|Collection<int, SertifikatSistemSemen>  $certificates
+     * @return Collection<int, array<string, mixed>>
      */
     private function formatSystemCertificates($certificates)
     {
