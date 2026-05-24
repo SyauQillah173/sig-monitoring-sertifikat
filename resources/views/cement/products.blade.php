@@ -112,7 +112,7 @@
                             <button type="submit" class="ui-button-primary">Terapkan Filter</button>
                             <a href="{{ route('cement.products.index') }}" class="ui-button-secondary">
                                 <flux:icon name="arrow-path" variant="outline" class="size-4" />
-                                Eraser
+                                Reset Filter
                             </a>
                             @if (auth()->user()->hasAppRole(\App\Enums\UserRole::Admin))
                                 <a href="{{ route('cement.exports.all', request()->query()) }}" class="ui-button-secondary">Export Excel</a>

@@ -317,6 +317,10 @@ const initializeSmartForms = () => {
             return;
         }
 
+        if (button.dataset.preserveLoadingLabel === 'true') {
+            return;
+        }
+
         button.replaceChildren();
 
         const spinner = document.createElement('span');
