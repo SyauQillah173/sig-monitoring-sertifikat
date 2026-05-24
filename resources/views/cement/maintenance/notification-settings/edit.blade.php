@@ -73,21 +73,34 @@
                 </div>
             </div>
 
-            <form method="POST" action="{{ route('cement.maintenance.notification-settings.test') }}" class="ui-form-panel">
-                @csrf
+            <div class="space-y-5">
+                <form method="POST" action="{{ route('cement.maintenance.notification-settings.test') }}" class="ui-form-panel">
+                    @csrf
 
-                <h2 class="ui-title-sm">Test Email</h2>
-                <p class="ui-copy mt-2">Kirim email test untuk memastikan SMTP aktif sebelum dipakai reset password dan reminder sertifikat.</p>
+                    <h2 class="ui-title-sm">Test Email</h2>
+                    <p class="ui-copy mt-2">Kirim email test untuk memastikan SMTP aktif sebelum dipakai reset password dan reminder sertifikat.</p>
 
-                <div class="mt-5 space-y-2">
-                    <label class="ui-label" for="test_email">Email Tujuan</label>
-                    <input id="test_email" name="test_email" type="email" value="{{ old('test_email', $settings['internal_recipient_email']) }}" class="ui-input" required>
-                </div>
+                    <div class="mt-5 space-y-2">
+                        <label class="ui-label" for="test_email">Email Tujuan</label>
+                        <input id="test_email" name="test_email" type="email" value="{{ old('test_email', $settings['internal_recipient_email']) }}" class="ui-input" required>
+                    </div>
 
-                <div class="mt-6">
-                    <button class="ui-button-secondary">Kirim Test</button>
-                </div>
-            </form>
+                    <div class="mt-6">
+                        <button class="ui-button-secondary">Kirim Test</button>
+                    </div>
+                </form>
+
+                <form method="POST" action="{{ route('cement.maintenance.notification-settings.send-reminders') }}" class="ui-form-panel">
+                    @csrf
+
+                    <h2 class="ui-title-sm">Uji Reminder Sertifikat</h2>
+                    <p class="ui-copy mt-2">Kirim reminder sekarang sesuai Hari Reminder, Status Email Otomatis, kontak perusahaan aktif, dan email internal default.</p>
+
+                    <div class="mt-6">
+                        <button class="ui-button-primary">Kirim Reminder Sekarang</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 </x-layouts::app>

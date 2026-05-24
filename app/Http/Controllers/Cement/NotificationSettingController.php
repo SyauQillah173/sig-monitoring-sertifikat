@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Cement;
 use App\Http\Controllers\Controller;
 use App\Mail\CementNotificationTestMail;
 use App\Models\NotificationSetting;
+use App\Services\Cement\CementCertificateEmailNotificationService;
 use App\Services\AuditLogger;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\QueryException;
@@ -78,6 +79,40 @@ class NotificationSettingController extends Controller
         app(AuditLogger::class)->log('notification_test_email_sent', null, 'Email test notifikasi dikirim.', null, ['email' => $email]);
 
         return back()->with('success', 'Email test berhasil dikirim ke '.$email.'.');
+    }
+
+    public function sendReminders(CementCertificateEmailNotificationService $service): RedirectResponse
+    {
+        if (config('mail.default') === 'log') {
+            return back()->with('error', 'Reminder belum dikirim keluar karena MAIL_MAILER masih "log". Ubah SMTP lalu deploy ulang.');
+        }
+
+        try {
+            $result = $service->sendDueReminders();
+        } catch (Throwable $throwable) {
+            report($throwable);
+
+            return back()->with('error', 'Reminder gagal diproses. Periksa SMTP, koneksi database, dan daftar sertifikat yang jatuh tempo.');
+        }
+
+        if ($result['skipped']) {
+            return back()->with('error', 'Email otomatis sedang nonaktif. Aktifkan Status Email Otomatis dulu.');
+        }
+
+        if ($result['certificates'] === 0) {
+            return back()->with('success', 'Reminder diproses, tetapi belum ada sertifikat sistem ISO yang masuk periode Hari Reminder.');
+        }
+
+        return back()->with(
+            $result['failed'] > 0 ? 'error' : 'success',
+            sprintf(
+                'Reminder diproses. Penerima: %d, Sertifikat: %d, Terkirim: %d, Gagal: %d.',
+                $result['recipients'],
+                $result['certificates'],
+                $result['sent'],
+                $result['failed'],
+            ),
+        );
     }
 
     /**

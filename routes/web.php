@@ -146,6 +146,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('pengaturan-email-notifikasi', [NotificationSettingController::class, 'edit'])->name('notification-settings.edit');
         Route::put('pengaturan-email-notifikasi', [NotificationSettingController::class, 'update'])->name('notification-settings.update');
         Route::post('pengaturan-email-notifikasi/test', [NotificationSettingController::class, 'test'])->name('notification-settings.test');
+        Route::post('pengaturan-email-notifikasi/kirim-reminder', [NotificationSettingController::class, 'sendReminders'])->name('notification-settings.send-reminders');
         Route::get('template-sertifikat', [CertificateTemplateController::class, 'edit'])->name('certificate-template.edit');
         Route::put('template-sertifikat', [CertificateTemplateController::class, 'update'])->name('certificate-template.update');
         Route::delete('template-sertifikat', [CertificateTemplateController::class, 'reset'])->name('certificate-template.reset');
