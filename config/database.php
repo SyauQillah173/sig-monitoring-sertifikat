@@ -9,6 +9,10 @@ if ($mysqlSslCa && ! preg_match('/^([A-Za-z]:[\/\\\\]|[\/\\\\])/', $mysqlSslCa))
     $mysqlSslCa = base_path($mysqlSslCa);
 }
 
+if ($mysqlSslCa && ! file_exists($mysqlSslCa) && file_exists(base_path('certs/tidb-ca.pem'))) {
+    $mysqlSslCa = base_path('certs/tidb-ca.pem');
+}
+
 return [
 
     /*

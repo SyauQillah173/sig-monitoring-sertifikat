@@ -13,6 +13,8 @@ try {
             mkdir($viewDirectory, 0777, true);
         }
 
+        $tidbCaPath = realpath(__DIR__.'/../certs/tidb-ca.pem') ?: __DIR__.'/../certs/tidb-ca.pem';
+
         $runtimeValues = [
             'APP_PACKAGES_CACHE' => $cacheDirectory.'/packages.php',
             'APP_SERVICES_CACHE' => $cacheDirectory.'/services.php',
@@ -20,6 +22,7 @@ try {
             'APP_ROUTES_CACHE' => $cacheDirectory.'/routes.php',
             'APP_EVENTS_CACHE' => $cacheDirectory.'/events.php',
             'VIEW_COMPILED_PATH' => $viewDirectory,
+            'MYSQL_ATTR_SSL_CA' => $tidbCaPath,
             'SESSION_DRIVER' => 'database',
             'SESSION_PATH' => '/',
             'CACHE_STORE' => 'database',
