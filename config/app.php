@@ -1,5 +1,7 @@
 <?php
 
+use Illuminate\Support\ServiceProvider;
+
 return [
 
     /*
@@ -122,5 +124,21 @@ return [
         'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Autoloaded Service Providers
+    |--------------------------------------------------------------------------
+    |
+    | Vercel's PHP runtime may build from cached configuration. Keeping the
+    | provider list explicit ensures Laravel's core services, including views,
+    | sessions, database, and validation, are always registered at runtime.
+    |
+    */
+
+    'providers' => ServiceProvider::defaultProviders()->merge([
+        App\Providers\AppServiceProvider::class,
+        App\Providers\FortifyServiceProvider::class,
+    ])->toArray(),
 
 ];
