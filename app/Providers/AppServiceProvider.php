@@ -20,7 +20,6 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
-use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 
@@ -96,19 +95,21 @@ class AppServiceProvider extends ServiceProvider
 
     protected function shareLayoutData(): void
     {
-        View::composer('layouts.app.sidebar', function ($view): void {
-            if (! auth()->check()) {
+        $this->app->afterResolving('view', function ($viewFactory): void {
+            $viewFactory->composer('layouts.app.sidebar', function ($view): void {
+                if (! auth()->check()) {
+                    $view->with('layoutNotifications', [
+                        'unreadCount' => 0,
+                    ]);
+
+                    return;
+                }
+
                 $view->with('layoutNotifications', [
-                    'unreadCount' => 0,
+                    'unreadCount' => auth()->user()->unreadSystemNotifications()->count(),
                 ]);
-
-                return;
-            }
-
-            $view->with('layoutNotifications', [
-                'unreadCount' => auth()->user()->unreadSystemNotifications()->count(),
-            ]);
-            $view->with('navigationGroups', app(SystemNavigationService::class)->groupsForUser(auth()->user()));
+                $view->with('navigationGroups', app(SystemNavigationService::class)->groupsForUser(auth()->user()));
+            });
         });
     }
 
