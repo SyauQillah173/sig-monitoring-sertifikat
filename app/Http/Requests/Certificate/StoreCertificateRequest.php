@@ -22,7 +22,7 @@ class StoreCertificateRequest extends FormRequest
             'certificate_number' => ['required', 'string', 'max:255', Rule::unique('certificates', 'certificate_number')],
             'issue_date' => ['required', 'date'],
             'expiry_date' => ['required', 'date', 'after_or_equal:issue_date'],
-            'document' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
+            'document' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:'.config('filesystems.certificate_files.max_upload_kb', 5120)],
             'notes' => ['nullable', 'string', 'max:2000'],
         ];
     }

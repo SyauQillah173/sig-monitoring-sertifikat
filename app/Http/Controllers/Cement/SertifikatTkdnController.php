@@ -8,15 +8,19 @@ use App\Models\CementReferenceValue;
 use App\Models\LokasiPabrik;
 use App\Models\MerekSemen;
 use App\Models\SertifikatTkdn;
+use App\Services\CertificateFileStorage;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 class SertifikatTkdnController extends Controller
 {
     use ResolvesCementMasterPayload;
+
+    public function __construct(
+        private readonly CertificateFileStorage $files,
+    ) {}
 
     public function index(Request $request): View
     {
@@ -54,7 +58,7 @@ class SertifikatTkdnController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $payload = $this->validatedPayload($request);
-        $payload['file_sertifikat'] = $request->file('file_sertifikat')?->store('uploads/sertifikat', 'local');
+        $payload['file_sertifikat'] = $this->files->store($request->file('file_sertifikat'), 'uploads/sertifikat');
         $certificate = SertifikatTkdn::query()->create($payload);
 
         return redirect()->route('cement.maintenance.sertifikat-tkdn.show', $certificate)->with('success', 'Sertifikat TKDN berhasil ditambahkan.');
@@ -90,7 +94,7 @@ class SertifikatTkdnController extends Controller
                 $this->deleteCertificateFile($sertifikatTkdn->file_sertifikat);
             }
 
-            $payload['file_sertifikat'] = $request->file('file_sertifikat')->store('uploads/sertifikat', 'local');
+            $payload['file_sertifikat'] = $this->files->store($request->file('file_sertifikat'), 'uploads/sertifikat');
         }
 
         $sertifikatTkdn->update($payload);
@@ -119,7 +123,7 @@ class SertifikatTkdnController extends Controller
             ...$this->referenceSelectionRules(CementReferenceValue::TYPE_KEMASAN, 'kemasan_reference_id', 'kemasan'),
             ...$this->locationSelectionRules(),
             'berlaku_sd' => ['required', 'date'],
-            'file_sertifikat' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:10240'],
+            'file_sertifikat' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:'.$this->files->maxUploadKilobytes()],
         ]);
 
         return [
@@ -161,7 +165,6 @@ class SertifikatTkdnController extends Controller
 
     private function deleteCertificateFile(string $path): void
     {
-        Storage::disk('local')->delete($path);
-        Storage::disk('public')->delete($path);
+        $this->files->delete($path);
     }
 }

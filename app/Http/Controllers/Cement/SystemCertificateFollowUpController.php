@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Notification;
 use App\Models\SertifikatSistemSemen;
 use App\Services\AuditLogger;
+use App\Services\CertificateFileStorage;
 use App\Services\SystemCertificateAuditTimelineService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -16,6 +17,7 @@ class SystemCertificateFollowUpController extends Controller
 {
     public function __construct(
         private readonly SystemCertificateAuditTimelineService $auditTimeline,
+        private readonly CertificateFileStorage $files,
     ) {}
 
     public function confirm(SertifikatSistemSemen $certificate, string $action): View
@@ -45,10 +47,10 @@ class SystemCertificateFollowUpController extends Controller
         $payload = $request->validate([
             'completed_at' => ['required', 'date'],
             'notes' => ['nullable', 'string', 'max:2000'],
-            'evidence_file' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:10240'],
+            'evidence_file' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:'.$this->files->maxUploadKilobytes()],
         ]);
 
-        $payload['evidence_file'] = $request->file('evidence_file')?->store('uploads/sertifikat-sistem-audit', 'local');
+        $payload['evidence_file'] = $this->files->store($request->file('evidence_file'), 'uploads/sertifikat-sistem-audit');
 
         $oldValues = $certificate->only(['audit_stage', 'notes']);
         $label = $certificate->auditStageLabel();
@@ -85,11 +87,11 @@ class SystemCertificateFollowUpController extends Controller
             'issuer' => ['nullable', 'string', 'max:255'],
             'issued_at' => ['required', 'date'],
             'berlaku_sd' => ['required', 'date', 'after_or_equal:issued_at'],
-            'file_sertifikat' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:10240'],
+            'file_sertifikat' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:'.$this->files->maxUploadKilobytes()],
             'notes' => ['nullable', 'string', 'max:2000'],
         ]);
 
-        $filePath = $request->file('file_sertifikat')?->store('uploads/sertifikat-sistem', 'local');
+        $filePath = $this->files->store($request->file('file_sertifikat'), 'uploads/sertifikat-sistem');
 
         $newCertificate = SertifikatSistemSemen::query()->create([
             'lokasi_pabrik_id' => $certificate->lokasi_pabrik_id,

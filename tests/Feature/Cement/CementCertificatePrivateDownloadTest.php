@@ -6,6 +6,7 @@ use App\Enums\UserRole;
 use App\Models\SertifikatSistemAuditEvent;
 use App\Models\SertifikatSistemSemen;
 use App\Models\SertifikatSni;
+use App\Models\StoredFile;
 use App\Models\User;
 use Database\Seeders\CementMonitoringSeeder;
 use Database\Seeders\RolePermissionSeeder;
@@ -47,6 +48,34 @@ class CementCertificatePrivateDownloadTest extends TestCase
             'auditable_id' => $certificate->id,
             'action' => 'cement_certificate_downloaded',
         ]);
+    }
+
+    public function test_authorized_user_can_download_database_backed_certificate_file(): void
+    {
+        config(['filesystems.certificate_files.driver' => 'database']);
+        $this->seed([RolePermissionSeeder::class, CementMonitoringSeeder::class]);
+
+        $certificate = SertifikatSni::query()->firstOrFail();
+        $certificate->forceFill([
+            'file_sertifikat' => 'uploads/sertifikat/database-sni.pdf',
+        ])->save();
+
+        StoredFile::query()->create([
+            'path' => $certificate->file_sertifikat,
+            'original_name' => 'database-sni.pdf',
+            'mime_type' => 'application/pdf',
+            'size' => strlen('database-certificate'),
+            'contents' => 'database-certificate',
+        ]);
+
+        $petugas = User::factory()->create()->assignAppRole(UserRole::Petugas);
+
+        $response = $this->actingAs($petugas)
+            ->get(route('cement.certificates.download', ['type' => 'sni', 'certificate' => $certificate]));
+
+        $response->assertOk()
+            ->assertHeader('content-disposition');
+        $this->assertSame('database-certificate', $response->streamedContent());
     }
 
     public function test_guest_cannot_download_system_iso_certificate_file(): void

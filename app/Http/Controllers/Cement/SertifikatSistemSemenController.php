@@ -6,17 +6,18 @@ use App\Http\Controllers\Controller;
 use App\Models\IsoStandard;
 use App\Models\LokasiPabrik;
 use App\Models\SertifikatSistemSemen;
+use App\Services\CertificateFileStorage;
 use App\Services\SystemCertificateAuditTimelineService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 class SertifikatSistemSemenController extends Controller
 {
     public function __construct(
         private readonly SystemCertificateAuditTimelineService $auditTimeline,
+        private readonly CertificateFileStorage $files,
     ) {}
 
     public function index(Request $request): View
@@ -63,7 +64,7 @@ class SertifikatSistemSemenController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $payload = $this->validatedPayload($request);
-        $payload['file_sertifikat'] = $request->file('file_sertifikat')?->store('uploads/sertifikat-sistem', 'local');
+        $payload['file_sertifikat'] = $this->files->store($request->file('file_sertifikat'), 'uploads/sertifikat-sistem');
 
         $certificate = SertifikatSistemSemen::query()->create($payload);
         $this->auditTimeline->syncFor($certificate);
@@ -98,7 +99,7 @@ class SertifikatSistemSemenController extends Controller
                 $this->deleteCertificateFile($sertifikatSistem->file_sertifikat);
             }
 
-            $payload['file_sertifikat'] = $request->file('file_sertifikat')->store('uploads/sertifikat-sistem', 'local');
+            $payload['file_sertifikat'] = $this->files->store($request->file('file_sertifikat'), 'uploads/sertifikat-sistem');
         }
 
         $sertifikatSistem->update($payload);
@@ -140,7 +141,7 @@ class SertifikatSistemSemenController extends Controller
             'public_url' => ['nullable', 'url', 'max:2048'],
             'description' => ['nullable', 'string', 'max:4000'],
             'notes' => ['nullable', 'string', 'max:2000'],
-            'file_sertifikat' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:10240'],
+            'file_sertifikat' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:'.$this->files->maxUploadKilobytes()],
         ]);
 
         unset($validated['file_sertifikat']);
@@ -170,7 +171,6 @@ class SertifikatSistemSemenController extends Controller
 
     private function deleteCertificateFile(string $path): void
     {
-        Storage::disk('local')->delete($path);
-        Storage::disk('public')->delete($path);
+        $this->files->delete($path);
     }
 }

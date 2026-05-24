@@ -15,6 +15,11 @@ return [
 
     'default' => env('FILESYSTEM_DISK', 'local'),
 
+    'certificate_files' => [
+        'driver' => env('CERTIFICATE_FILE_STORAGE', env('VERCEL') ? 'database' : 'local'),
+        'max_upload_kb' => (int) env('CERTIFICATE_UPLOAD_MAX_KB', env('VERCEL') ? 3072 : 10240),
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Filesystem Disks

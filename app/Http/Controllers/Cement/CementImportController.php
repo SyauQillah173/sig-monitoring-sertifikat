@@ -172,17 +172,20 @@ class CementImportController extends Controller
 
     private function previewForRequest(Request $request): ?array
     {
-        return Cache::store('database')->get($this->previewCacheKey($request));
+        return $request->session()->get(self::SESSION_KEY)
+            ?: Cache::get($this->previewCacheKey($request));
     }
 
     private function storePreviewForRequest(Request $request, array $preview): void
     {
-        Cache::store('database')->put($this->previewCacheKey($request), $preview, now()->addHours(2));
+        $request->session()->put(self::SESSION_KEY, $preview);
+        Cache::put($this->previewCacheKey($request), $preview, now()->addHours(2));
     }
 
     private function forgetPreviewForRequest(Request $request): void
     {
-        Cache::store('database')->forget($this->previewCacheKey($request));
+        $request->session()->forget(self::SESSION_KEY);
+        Cache::forget($this->previewCacheKey($request));
     }
 
     private function previewCacheKey(Request $request): string

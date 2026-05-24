@@ -9,6 +9,7 @@ use App\Models\LokasiPabrik;
 use App\Models\Notification;
 use App\Models\SertifikatSistemAuditEvent;
 use App\Models\SertifikatSistemSemen;
+use App\Models\StoredFile;
 use App\Models\User;
 use Database\Seeders\CementMonitoringSeeder;
 use Database\Seeders\RolePermissionSeeder;
@@ -91,6 +92,37 @@ class CementSystemCertificateTest extends TestCase
         Storage::disk('local')->assertExists($certificate->file_sertifikat);
     }
 
+    public function test_admin_can_upload_system_iso_certificate_to_database_storage(): void
+    {
+        config(['filesystems.certificate_files.driver' => 'database']);
+        $this->seed([RolePermissionSeeder::class, CementMonitoringSeeder::class]);
+
+        $admin = User::factory()->create()->assignAppRole(UserRole::Admin);
+        $standard = IsoStandard::query()->where('code', 'ISO 9001')->firstOrFail();
+        $location = LokasiPabrik::query()->firstOrFail();
+
+        $this->actingAs($admin)
+            ->post(route('cement.maintenance.sertifikat-sistem.store'), [
+                'lokasi_pabrik_id' => $location->id,
+                'iso_standard_id' => $standard->id,
+                'certificate_number' => 'ISO-9001-DB-STORAGE',
+                'issuer' => 'Test Issuer',
+                'audit_stage' => SertifikatSistemSemen::AUDIT_STAGE_SURVEILEN_1,
+                'scope' => 'Produksi semen',
+                'issued_at' => '2026-01-01',
+                'berlaku_sd' => '2029-01-01',
+                'acquisition_year' => 2026,
+                'certification_level' => SertifikatSistemSemen::LEVEL_INTERNASIONAL,
+                'file_sertifikat' => UploadedFile::fake()->create('iso-db.pdf', 64, 'application/pdf'),
+            ])
+            ->assertRedirect();
+
+        $certificate = SertifikatSistemSemen::query()->where('certificate_number', 'ISO-9001-DB-STORAGE')->firstOrFail();
+
+        $this->assertNotNull($certificate->file_sertifikat);
+        $this->assertTrue(StoredFile::query()->where('path', $certificate->file_sertifikat)->exists());
+    }
+
     public function test_system_dashboard_shows_every_iso_location_certificate(): void
     {
         $this->seed([RolePermissionSeeder::class, CementMonitoringSeeder::class]);
@@ -144,6 +176,22 @@ class CementSystemCertificateTest extends TestCase
             ->get(route('cement.certificates.download', ['type' => 'system', 'certificate' => $certificate]))
             ->assertOk()
             ->assertHeader('content-disposition');
+    }
+
+    public function test_summary_document_pdf_uses_compact_template_for_vercel_payload(): void
+    {
+        $this->seed([RolePermissionSeeder::class, CementMonitoringSeeder::class]);
+
+        $certificate = SertifikatSistemSemen::query()->firstOrFail();
+        $admin = User::factory()->create()->assignAppRole(UserRole::Admin);
+
+        $response = $this->actingAs($admin)
+            ->get(route('cement.certificates.document', ['type' => 'system', 'certificate' => $certificate]));
+
+        $response->assertOk()
+            ->assertHeader('content-type', 'application/pdf');
+
+        $this->assertLessThan(1_500_000, strlen($response->getContent()));
     }
 
     public function test_system_iso_follow_up_notifications_are_generated_for_admin_and_petugas(): void

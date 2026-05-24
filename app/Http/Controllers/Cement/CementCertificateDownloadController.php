@@ -8,14 +8,18 @@ use App\Models\SertifikatSistemSemen;
 use App\Models\SertifikatSni;
 use App\Models\SertifikatTkdn;
 use App\Services\AuditLogger;
+use App\Services\CertificateFileStorage;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class CementCertificateDownloadController extends Controller
 {
+    public function __construct(
+        private readonly CertificateFileStorage $files,
+    ) {}
+
     public function __invoke(string $type, int $certificate): StreamedResponse|RedirectResponse
     {
         $model = $this->resolveCertificate($type, $certificate);
@@ -24,19 +28,16 @@ class CementCertificateDownloadController extends Controller
             return back()->with('error', 'File sertifikat tidak ditemukan.');
         }
 
-        $disk = Storage::disk('local')->exists($model->file_sertifikat) ? 'local' : 'public';
-
-        if (! Storage::disk($disk)->exists($model->file_sertifikat)) {
+        if (! $this->files->exists($model->file_sertifikat)) {
             return back()->with('error', 'File sertifikat tidak ditemukan.');
         }
 
         app(AuditLogger::class)->log($type === 'system' ? 'cement_system_certificate_downloaded' : 'cement_certificate_downloaded', $model, $type === 'system' ? 'File sertifikat sistem ISO diunduh.' : 'File sertifikat semen diunduh.', null, [
             'certificate_type' => $type,
             'file_path' => $model->file_sertifikat,
-            'disk' => $disk,
         ]);
 
-        return Storage::disk($disk)->download($model->file_sertifikat, $this->downloadFilename($type, $model));
+        return $this->files->download($model->file_sertifikat, $this->downloadFilename($type, $model));
     }
 
     private function resolveCertificate(string $type, int $id): ?Model

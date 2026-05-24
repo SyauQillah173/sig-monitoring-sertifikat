@@ -170,7 +170,7 @@
 </head>
 <body>
     <main class="page">
-        <img class="background" src="{{ public_path($document['template_path'] ?? 'images/Sertifikat.jpg') }}" alt="">
+        <img class="background" src="{{ $document['template_src'] }}" alt="">
 
         <section class="content">
             <div class="issuer">

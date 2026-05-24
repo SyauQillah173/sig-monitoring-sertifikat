@@ -8,15 +8,19 @@ use App\Models\CertificateType;
 use App\Models\Issuer;
 use App\Models\Product;
 use App\Models\User;
+use App\Services\CertificateFileStorage;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Throwable;
 
 class CertificateService
 {
+    public function __construct(
+        private readonly CertificateFileStorage $files,
+    ) {}
+
     /**
      * @return LengthAwarePaginator<int, Certificate>
      */
@@ -54,7 +58,7 @@ class CertificateService
      */
     public function create(array $validated, User $actor, ?UploadedFile $document = null): Certificate
     {
-        $documentPath = $document?->store('certificates', 'local');
+        $documentPath = $this->files->store($document, 'certificates');
 
         try {
             return DB::transaction(function () use ($validated, $actor, $documentPath) {
@@ -77,7 +81,7 @@ class CertificateService
     public function update(Certificate $certificate, array $validated, User $actor, ?UploadedFile $document = null): Certificate
     {
         $oldDocumentPath = $certificate->file_path;
-        $newDocumentPath = $document?->store('certificates', 'local');
+        $newDocumentPath = $this->files->store($document, 'certificates');
 
         try {
             DB::transaction(function () use ($certificate, $validated, $actor, $newDocumentPath) {
@@ -118,9 +122,12 @@ class CertificateService
 
     public function documentExists(Certificate $certificate): bool
     {
-        return $certificate->hasDocument()
-            && (Storage::disk('local')->exists($certificate->file_path)
-                || Storage::disk('public')->exists($certificate->file_path));
+        return $certificate->hasDocument() && $this->files->exists($certificate->file_path);
+    }
+
+    public function download(Certificate $certificate): \Symfony\Component\HttpFoundation\StreamedResponse
+    {
+        return $this->files->download($certificate->file_path, $certificate->downloadFilename());
     }
 
     /**
@@ -146,7 +153,6 @@ class CertificateService
 
     private function deleteDocument(string $path): void
     {
-        Storage::disk('local')->delete($path);
-        Storage::disk('public')->delete($path);
+        $this->files->delete($path);
     }
 }

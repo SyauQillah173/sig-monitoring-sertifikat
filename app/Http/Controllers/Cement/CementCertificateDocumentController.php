@@ -9,6 +9,7 @@ use App\Models\SertifikatSistemSemen;
 use App\Models\SertifikatSni;
 use App\Models\SertifikatTkdn;
 use App\Services\AuditLogger;
+use App\Services\CertificateFileStorage;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
@@ -18,7 +19,11 @@ use Symfony\Component\HttpFoundation\Response;
 
 class CementCertificateDocumentController extends Controller
 {
-    private const DEFAULT_TEMPLATE = 'images/Sertifikat.jpg';
+    private const DEFAULT_TEMPLATE = 'images/Sertifikat.optimized.jpg';
+
+    public function __construct(
+        private readonly CertificateFileStorage $files,
+    ) {}
 
     public function __invoke(string $type, int $certificate): Response|RedirectResponse
     {
@@ -63,7 +68,7 @@ class CementCertificateDocumentController extends Controller
                 'category' => $certificate->isoStandard?->code,
                 'status' => $certificate->statusLabel(),
                 'valid_until' => $certificate->berlaku_sd?->format('d M Y'),
-                'template_path' => $this->templatePath(),
+                'template_src' => $this->templateSource(),
                 'rows' => [
                     ['Standar ISO', trim(($certificate->isoStandard?->code ?? '').' - '.($certificate->isoStandard?->name ?? ''))],
                     ['Nomor Sertifikat', $certificate->certificate_number ?: '-'],
@@ -119,7 +124,7 @@ class CementCertificateDocumentController extends Controller
             'category' => $certificate->merekSemen?->kategoriSemen?->nama_kategori ?? 'Semen',
             'status' => $certificate->statusLabel(),
             'valid_until' => $certificate->berlaku_sd?->format('d M Y'),
-            'template_path' => $this->templatePath(),
+            'template_src' => $this->templateSource(),
             'rows' => [
                 ...$baseRows,
                 ...$specificRows,
@@ -139,10 +144,12 @@ class CementCertificateDocumentController extends Controller
         return 'dokumen-ringkasan-sertifikat-'.Str::slug($type.' '.$subject.' '.$certificate->getKey()).'.pdf';
     }
 
-    private function templatePath(): string
+    private function templateSource(): string
     {
         $path = NotificationSetting::query()->where('key', 'certificate_template_path')->value('value') ?: self::DEFAULT_TEMPLATE;
+        $path = $path === 'images/Sertifikat.jpg' ? self::DEFAULT_TEMPLATE : $path;
 
-        return File::exists(public_path($path)) ? $path : self::DEFAULT_TEMPLATE;
+        return $this->files->dataUri($path)
+            ?: (File::exists(public_path($path)) ? public_path($path) : public_path(self::DEFAULT_TEMPLATE));
     }
 }

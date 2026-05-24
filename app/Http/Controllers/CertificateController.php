@@ -10,7 +10,6 @@ use App\Services\Certificates\CertificateService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Throwable;
 
@@ -124,16 +123,10 @@ class CertificateController extends Controller
             return back()->with('error', 'Dokumen sertifikat tidak ditemukan.');
         }
 
-        $disk = Storage::disk('local')->exists($certificate->file_path) ? 'local' : 'public';
-
         app(AuditLogger::class)->log('certificate_downloaded', $certificate, 'Dokumen sertifikat sistem diunduh.', null, [
             'file_path' => $certificate->file_path,
-            'disk' => $disk,
         ]);
 
-        return Storage::disk($disk)->download(
-            $certificate->file_path,
-            $certificate->downloadFilename(),
-        );
+        return $this->certificateService->download($certificate);
     }
 }

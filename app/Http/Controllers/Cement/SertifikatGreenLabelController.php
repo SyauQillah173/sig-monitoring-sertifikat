@@ -8,15 +8,19 @@ use App\Models\CementReferenceValue;
 use App\Models\LokasiPabrik;
 use App\Models\MerekSemen;
 use App\Models\SertifikatGreenLabel;
+use App\Services\CertificateFileStorage;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 class SertifikatGreenLabelController extends Controller
 {
     use ResolvesCementMasterPayload;
+
+    public function __construct(
+        private readonly CertificateFileStorage $files,
+    ) {}
 
     public function index(Request $request): View
     {
@@ -54,7 +58,7 @@ class SertifikatGreenLabelController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $payload = $this->validatedPayload($request);
-        $payload['file_sertifikat'] = $request->file('file_sertifikat')?->store('uploads/sertifikat', 'local');
+        $payload['file_sertifikat'] = $this->files->store($request->file('file_sertifikat'), 'uploads/sertifikat');
         $certificate = SertifikatGreenLabel::query()->create($payload);
 
         return redirect()->route('cement.maintenance.sertifikat-green-label.show', $certificate)->with('success', 'Sertifikat Green Label berhasil ditambahkan.');
@@ -90,7 +94,7 @@ class SertifikatGreenLabelController extends Controller
                 $this->deleteCertificateFile($sertifikatGreenLabel->file_sertifikat);
             }
 
-            $payload['file_sertifikat'] = $request->file('file_sertifikat')->store('uploads/sertifikat', 'local');
+            $payload['file_sertifikat'] = $this->files->store($request->file('file_sertifikat'), 'uploads/sertifikat');
         }
 
         $sertifikatGreenLabel->update($payload);
@@ -118,7 +122,7 @@ class SertifikatGreenLabelController extends Controller
             ...$this->referenceSelectionRules(CementReferenceValue::TYPE_PERINGKAT_GREEN_LABEL, 'peringkat_green_label_reference_id', 'peringkat'),
             ...$this->locationSelectionRules(),
             'berlaku_sd' => ['required', 'date'],
-            'file_sertifikat' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:10240'],
+            'file_sertifikat' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:'.$this->files->maxUploadKilobytes()],
         ]);
 
         return [
@@ -159,7 +163,6 @@ class SertifikatGreenLabelController extends Controller
 
     private function deleteCertificateFile(string $path): void
     {
-        Storage::disk('local')->delete($path);
-        Storage::disk('public')->delete($path);
+        $this->files->delete($path);
     }
 }

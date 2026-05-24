@@ -18,7 +18,7 @@
                     <label for="template" class="ui-label">Upload Template Sertifikat</label>
                     <input id="template" name="template" type="file" class="ui-input" accept=".jpg,.jpeg,.png,.webp" required>
                     <p class="ui-table-row-meta">
-                        Gunakan gambar portrait A4 agar teks otomatis pas. Rekomendasi rasio 210:297, format JPG/PNG/WEBP, maksimal 12 MB.
+                        Gunakan gambar portrait A4 agar teks otomatis pas. Rekomendasi rasio 210:297, format JPG/PNG/WEBP. Sistem akan mengompres template agar aman untuk Vercel.
                     </p>
                 </div>
 
@@ -37,7 +37,7 @@
                 <p class="ui-table-row-meta mt-1">{{ $templatePath }}</p>
 
                 <div class="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-950">
-                    <img src="{{ asset($templatePath) }}" alt="Template sertifikat aktif" class="block w-full">
+                    <img src="{{ $templatePreviewSrc }}" alt="Template sertifikat aktif" class="block w-full">
                 </div>
 
                 <form method="POST" action="{{ route('cement.maintenance.certificate-template.reset') }}" class="mt-5" data-confirm data-confirm-title="Konfirmasi Reset" data-confirm-message="Kembalikan template sertifikat ke default?" data-confirm-action="Reset" data-confirm-loading-label="Mereset...">
