@@ -56,6 +56,8 @@ class NavigationItemController extends Controller
                 ]);
         }
 
+        $this->navigation->clearCache();
+
         app(AuditLogger::class)->log('navigation_items_updated', null, 'Admin memperbarui menu aplikasi.', null, [
             'items' => count($items),
         ]);

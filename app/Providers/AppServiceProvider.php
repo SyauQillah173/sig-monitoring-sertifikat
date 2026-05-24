@@ -14,6 +14,7 @@ use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
@@ -120,10 +121,16 @@ class AppServiceProvider extends ServiceProvider
                     return;
                 }
 
+                $user = auth()->user();
+
                 $view->with('layoutNotifications', [
-                    'unreadCount' => auth()->user()->unreadSystemNotifications()->count(),
+                    'unreadCount' => Cache::remember(
+                        "notifications.unread-count.{$user->id}",
+                        now()->addSeconds(30),
+                        fn (): int => $user->unreadSystemNotifications()->count(),
+                    ),
                 ]);
-                $view->with('navigationGroups', app(SystemNavigationService::class)->groupsForUser(auth()->user()));
+                $view->with('navigationGroups', app(SystemNavigationService::class)->groupsForUser($user));
             });
         });
     }

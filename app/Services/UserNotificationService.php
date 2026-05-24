@@ -6,6 +6,7 @@ use App\Enums\NotificationStatus;
 use App\Models\Notification;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Cache;
 
 class UserNotificationService
 {
@@ -25,14 +26,24 @@ class UserNotificationService
         abort_unless($notification->user_id === $user->id, 403);
 
         $notification->markAsRead();
+        $this->clearUnreadCountCache($user);
     }
 
     public function markAllAsReadForUser(User $user): int
     {
-        return $user->unreadSystemNotifications()
+        $updated = $user->unreadSystemNotifications()
             ->update([
                 'status' => NotificationStatus::Read->value,
                 'read_at' => now(),
             ]);
+
+        $this->clearUnreadCountCache($user);
+
+        return $updated;
+    }
+
+    private function clearUnreadCountCache(User $user): void
+    {
+        Cache::forget("notifications.unread-count.{$user->id}");
     }
 }

@@ -4,6 +4,7 @@ try {
     if (isset($_ENV['VERCEL']) || isset($_SERVER['VERCEL'])) {
         $cacheDirectory = '/tmp/laravel-cache';
         $viewDirectory = $cacheDirectory.'/views';
+        $cacheDataDirectory = $cacheDirectory.'/data';
 
         if (! is_dir($cacheDirectory)) {
             mkdir($cacheDirectory, 0777, true);
@@ -11,6 +12,10 @@ try {
 
         if (! is_dir($viewDirectory)) {
             mkdir($viewDirectory, 0777, true);
+        }
+
+        if (! is_dir($cacheDataDirectory)) {
+            mkdir($cacheDataDirectory, 0777, true);
         }
 
         $tidbCaPath = realpath(__DIR__.'/../certs/tidb-ca.pem') ?: __DIR__.'/../certs/tidb-ca.pem';
@@ -23,9 +28,11 @@ try {
             'APP_EVENTS_CACHE' => $cacheDirectory.'/events.php',
             'VIEW_COMPILED_PATH' => $viewDirectory,
             'MYSQL_ATTR_SSL_CA' => $tidbCaPath,
-            'SESSION_DRIVER' => 'database',
+            'SESSION_DRIVER' => 'cookie',
             'SESSION_PATH' => '/',
-            'CACHE_STORE' => 'database',
+            'CACHE_STORE' => 'file',
+            'CACHE_PATH' => $cacheDataDirectory,
+            'CACHE_LOCK_PATH' => $cacheDataDirectory,
             'QUEUE_CONNECTION' => 'sync',
         ];
 

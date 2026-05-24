@@ -5,7 +5,9 @@ namespace App\Services;
 use App\Enums\UserRole;
 use App\Models\NavigationItem;
 use App\Models\User;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 
@@ -16,8 +18,6 @@ class SystemNavigationService
      */
     public function groupsForUser(User $user): array
     {
-        $this->ensureDefaultsExist();
-
         $items = $this->databaseItemsForUser($user);
 
         if ($items->isEmpty()) {
@@ -47,6 +47,15 @@ class SystemNavigationService
                     'is_active' => true,
                 ],
             );
+        }
+
+        $this->clearCache();
+    }
+
+    public function clearCache(): void
+    {
+        foreach (UserRole::values() as $role) {
+            Cache::forget($this->cacheKey($role));
         }
     }
 
@@ -112,17 +121,23 @@ class SystemNavigationService
 
     private function databaseItemsForUser(User $user): Collection
     {
-        if (! Schema::hasTable('navigation_items')) {
-            return collect();
-        }
+        $role = $user->appRole()?->value ?? 'guest';
 
-        return NavigationItem::query()
-            ->where('is_active', true)
-            ->ordered()
-            ->get()
-            ->filter(fn (NavigationItem $item) => Route::has($item->route_name))
-            ->filter(fn (NavigationItem $item) => $this->userCanSee($user, $item->toArray()))
-            ->values();
+        return collect(Cache::remember($this->cacheKey($role), now()->addMinutes(10), function () use ($user): array {
+            try {
+                return NavigationItem::query()
+                    ->where('is_active', true)
+                    ->ordered()
+                    ->get()
+                    ->filter(fn (NavigationItem $item) => Route::has($item->route_name))
+                    ->filter(fn (NavigationItem $item) => $this->userCanSee($user, $item->toArray()))
+                    ->map(fn (NavigationItem $item) => $item->toArray())
+                    ->values()
+                    ->all();
+            } catch (QueryException) {
+                return [];
+            }
+        }));
     }
 
     /**
@@ -162,5 +177,10 @@ class SystemNavigationService
         return str_ends_with($routeName, '.index')
             ? substr($routeName, 0, -6).'.*'
             : $routeName;
+    }
+
+    private function cacheKey(string $role): string
+    {
+        return "navigation.items.{$role}.v1";
     }
 }

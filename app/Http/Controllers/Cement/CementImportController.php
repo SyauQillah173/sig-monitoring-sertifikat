@@ -16,6 +16,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Facades\Excel;
@@ -26,10 +27,10 @@ class CementImportController extends Controller
 {
     private const SESSION_KEY = 'cement_certificate_import_preview';
 
-    public function index(): View
+    public function index(Request $request): View
     {
         return view('cement.import.index', [
-            'preview' => session(self::SESSION_KEY),
+            'preview' => $this->previewForRequest($request),
         ]);
     }
 
@@ -48,7 +49,7 @@ class CementImportController extends Controller
             return back()->with('error', 'File Excel tidak bisa dibaca. Pastikan format template sudah benar.');
         }
 
-        session([self::SESSION_KEY => $preview]);
+        $this->storePreviewForRequest($request, $preview);
         $this->auditImport('cement_certificate_import_previewed', $preview);
 
         return redirect()->route('cement.import.index')->with(
@@ -57,9 +58,9 @@ class CementImportController extends Controller
         );
     }
 
-    public function store(): RedirectResponse
+    public function store(Request $request): RedirectResponse
     {
-        $preview = session(self::SESSION_KEY);
+        $preview = $this->previewForRequest($request);
 
         if (! $preview) {
             return redirect()->route('cement.import.index')->with('error', 'Belum ada preview import yang siap disimpan.');
@@ -159,7 +160,7 @@ class CementImportController extends Controller
         });
 
         $this->auditImport('cement_certificate_import_stored', $preview);
-        session()->forget(self::SESSION_KEY);
+        $this->forgetPreviewForRequest($request);
 
         return redirect()->route('cement.products.index')->with(
             'success',
@@ -167,6 +168,26 @@ class CementImportController extends Controller
                 ? "Import selesai. {$storedRows} data baru berhasil disimpan, data duplikat dilewati."
                 : 'Tidak ada data baru untuk disimpan. Semua data import sudah ada di sistem.',
         );
+    }
+
+    private function previewForRequest(Request $request): ?array
+    {
+        return Cache::store('database')->get($this->previewCacheKey($request));
+    }
+
+    private function storePreviewForRequest(Request $request, array $preview): void
+    {
+        Cache::store('database')->put($this->previewCacheKey($request), $preview, now()->addHours(2));
+    }
+
+    private function forgetPreviewForRequest(Request $request): void
+    {
+        Cache::store('database')->forget($this->previewCacheKey($request));
+    }
+
+    private function previewCacheKey(Request $request): string
+    {
+        return self::SESSION_KEY.':'.$request->session()->getId();
     }
 
     private function brandFromRow(array $row): MerekSemen
