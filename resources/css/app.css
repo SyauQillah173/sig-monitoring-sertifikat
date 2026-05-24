@@ -4255,6 +4255,27 @@ select:focus[data-flux-control] {
         animation: ui-spin 700ms linear infinite;
     }
 
+    #nprogress {
+        pointer-events: none;
+    }
+
+    html #nprogress .bar {
+        top: 0 !important;
+        height: 4px !important;
+        background: linear-gradient(90deg, #14b8a6 0%, #f59e0b 38%, #6366f1 72%, #14b8a6 100%) !important;
+        background-size: 220% 100% !important;
+        box-shadow: 0 0 18px rgba(20, 184, 166, 0.45), 0 0 26px rgba(99, 102, 241, 0.28) !important;
+        animation: ui-route-progress 900ms linear infinite !important;
+    }
+
+    html #nprogress .peg {
+        display: none !important;
+    }
+
+    html #nprogress .spinner {
+        display: none !important;
+    }
+
     .ui-cement-donut {
         width: clamp(7.5rem, 42vw, 10rem);
         height: clamp(7.5rem, 42vw, 10rem);
@@ -4510,5 +4531,15 @@ select:focus[data-flux-control] {
 @keyframes ui-spin {
     to {
         transform: rotate(360deg);
+    }
+}
+
+@keyframes ui-route-progress {
+    from {
+        background-position: 0% 50%;
+    }
+
+    to {
+        background-position: 220% 50%;
     }
 }
