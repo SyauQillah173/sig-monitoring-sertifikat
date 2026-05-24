@@ -17,6 +17,7 @@ class UserNotificationService
     {
         return $user->systemNotifications()
             ->with(['certificate.product'])
+            ->visibleInInbox()
             ->latestFirst()
             ->paginate($perPage);
     }

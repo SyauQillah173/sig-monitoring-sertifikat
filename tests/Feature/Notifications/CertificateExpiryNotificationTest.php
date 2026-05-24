@@ -139,6 +139,55 @@ class CertificateExpiryNotificationTest extends TestCase
         $this->assertSame(0, $user->fresh()->unreadSystemNotifications()->count());
     }
 
+    public function test_read_notifications_older_than_90_days_are_hidden_from_internal_inbox(): void
+    {
+        Carbon::setTestNow('2026-05-25 10:00:00');
+        $this->seed(RolePermissionSeeder::class);
+        $user = User::factory()->create()->assignAppRole(UserRole::Admin);
+
+        Notification::query()->create([
+            'user_id' => $user->id,
+            'certificate_id' => null,
+            'title' => 'Notifikasi lama',
+            'message' => 'Pesan lama.',
+            'notification_type' => 'certificate_expiry_reminder',
+            'status' => NotificationStatus::Read,
+            'scheduled_at' => now()->subDays(100),
+            'sent_at' => now()->subDays(100),
+            'read_at' => now()->subDays(91),
+        ]);
+
+        Notification::query()->create([
+            'user_id' => $user->id,
+            'certificate_id' => null,
+            'title' => 'Notifikasi baru dibaca',
+            'message' => 'Pesan baru.',
+            'notification_type' => 'certificate_expiry_reminder',
+            'status' => NotificationStatus::Read,
+            'scheduled_at' => now()->subDays(30),
+            'sent_at' => now()->subDays(30),
+            'read_at' => now()->subDays(30),
+        ]);
+
+        Notification::query()->create([
+            'user_id' => $user->id,
+            'certificate_id' => null,
+            'title' => 'Notifikasi belum dibaca',
+            'message' => 'Pesan belum dibaca.',
+            'notification_type' => 'certificate_expiry_reminder',
+            'status' => NotificationStatus::Unread,
+            'scheduled_at' => now()->subDays(120),
+            'sent_at' => now()->subDays(120),
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('notifications.index'))
+            ->assertOk()
+            ->assertDontSee('Notifikasi lama')
+            ->assertSee('Notifikasi baru dibaca')
+            ->assertSee('Notifikasi belum dibaca');
+    }
+
     protected function tearDown(): void
     {
         Carbon::setTestNow();

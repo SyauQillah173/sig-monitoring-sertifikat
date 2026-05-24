@@ -3,6 +3,7 @@
 namespace Tests\Feature\Cement;
 
 use App\Enums\UserRole;
+use App\Mail\CementCertificateReminderMail;
 use App\Models\IsoStandard;
 use App\Models\LokasiPabrik;
 use App\Models\Notification;
@@ -14,6 +15,7 @@ use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -169,6 +171,38 @@ class CementSystemCertificateTest extends TestCase
             'user_id' => $petugas->id,
             'notification_type' => 'cement_system_follow_up',
         ]);
+    }
+
+    public function test_manual_reminder_trigger_sends_email_and_generates_internal_notifications(): void
+    {
+        Mail::fake();
+        Carbon::setTestNow('2025-12-15 08:00:00');
+        $this->seed([RolePermissionSeeder::class, CementMonitoringSeeder::class]);
+
+        $admin = User::factory()->create()->assignAppRole(UserRole::Admin);
+        $petugas = User::factory()->create()->assignAppRole(UserRole::Petugas);
+
+        $certificate = SertifikatSistemSemen::query()->firstOrFail();
+        $certificate->forceFill([
+            'audit_stage' => SertifikatSistemSemen::AUDIT_STAGE_SURVEILEN_1,
+            'issued_at' => '2025-01-01',
+            'berlaku_sd' => '2028-01-01',
+        ])->save();
+
+        $this->actingAs($admin)
+            ->post(route('cement.maintenance.notification-settings.send-reminders'))
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('notifications', [
+            'user_id' => $admin->id,
+            'notification_type' => 'cement_system_follow_up',
+        ]);
+        $this->assertDatabaseHas('notifications', [
+            'user_id' => $petugas->id,
+            'notification_type' => 'cement_system_follow_up',
+        ]);
+        Mail::assertSent(CementCertificateReminderMail::class, 1);
     }
 
     public function test_system_iso_follow_up_form_is_protected_by_login_and_role(): void

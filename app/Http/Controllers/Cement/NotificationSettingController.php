@@ -5,8 +5,9 @@ namespace App\Http\Controllers\Cement;
 use App\Http\Controllers\Controller;
 use App\Mail\CementNotificationTestMail;
 use App\Models\NotificationSetting;
-use App\Services\Cement\CementCertificateEmailNotificationService;
 use App\Services\AuditLogger;
+use App\Services\Cement\CementCertificateEmailNotificationService;
+use App\Services\CertificateExpiryNotificationService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
@@ -81,36 +82,42 @@ class NotificationSettingController extends Controller
         return back()->with('success', 'Email test berhasil dikirim ke '.$email.'.');
     }
 
-    public function sendReminders(CementCertificateEmailNotificationService $service): RedirectResponse
+    public function sendReminders(
+        CertificateExpiryNotificationService $internalNotificationService,
+        CementCertificateEmailNotificationService $emailNotificationService,
+    ): RedirectResponse
     {
         if (config('mail.default') === 'log') {
             return back()->with('error', 'Reminder belum dikirim keluar karena MAIL_MAILER masih "log". Ubah SMTP lalu deploy ulang.');
         }
 
         try {
-            $result = $service->sendDueReminders();
+            $internalResult = $internalNotificationService->generate();
+            $emailResult = $emailNotificationService->sendDueReminders();
         } catch (Throwable $throwable) {
             report($throwable);
 
             return back()->with('error', 'Reminder gagal diproses. Periksa SMTP, koneksi database, dan daftar sertifikat yang jatuh tempo.');
         }
 
-        if ($result['skipped']) {
+        if ($emailResult['skipped']) {
             return back()->with('error', 'Email otomatis sedang nonaktif. Aktifkan Status Email Otomatis dulu.');
         }
 
-        if ($result['certificates'] === 0) {
-            return back()->with('success', 'Reminder diproses, tetapi belum ada sertifikat sistem ISO yang masuk periode Hari Reminder.');
+        if ($emailResult['certificates'] === 0 && $internalResult['eligible_certificates'] === 0) {
+            return back()->with('success', 'Reminder diproses, tetapi belum ada sertifikat yang masuk periode Hari Reminder.');
         }
 
         return back()->with(
-            $result['failed'] > 0 ? 'error' : 'success',
+            $emailResult['failed'] > 0 ? 'error' : 'success',
             sprintf(
-                'Reminder diproses. Penerima: %d, Sertifikat: %d, Terkirim: %d, Gagal: %d.',
-                $result['recipients'],
-                $result['certificates'],
-                $result['sent'],
-                $result['failed'],
+                'Reminder diproses. Notifikasi internal dibuat: %d, diperbarui: %d. Email penerima: %d, sertifikat: %d, terkirim: %d, gagal: %d.',
+                $internalResult['created'],
+                $internalResult['updated'],
+                $emailResult['recipients'],
+                $emailResult['certificates'],
+                $emailResult['sent'],
+                $emailResult['failed'],
             ),
         );
     }

@@ -51,6 +51,7 @@ class DashboardMonitoringService
             ] : [],
             'recentNotifications' => $user?->systemNotifications()
                 ->with(['certificate.product'])
+                ->visibleInInbox()
                 ->latestFirst()
                 ->limit(4)
                 ->get() ?? new Collection,

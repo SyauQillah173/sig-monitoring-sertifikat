@@ -62,6 +62,26 @@ class Notification extends Model
         return $query->latest()->latest('scheduled_at');
     }
 
+    public function scopeVisibleInInbox(Builder $query, int $readRetentionDays = 90): Builder
+    {
+        $cutoff = now()->subDays($readRetentionDays);
+
+        return $query->where(function (Builder $query) use ($cutoff): void {
+            $query->where('status', NotificationStatus::Unread->value)
+                ->orWhere(function (Builder $query) use ($cutoff): void {
+                    $query->where('status', NotificationStatus::Read->value)
+                        ->where(function (Builder $query) use ($cutoff): void {
+                            $query->whereNull('read_at')
+                                ->orWhere('read_at', '>=', $cutoff);
+                        });
+                })
+                ->orWhere(function (Builder $query) use ($cutoff): void {
+                    $query->where('status', NotificationStatus::Dismissed->value)
+                        ->where('updated_at', '>=', $cutoff);
+                });
+        });
+    }
+
     public function markAsRead(): void
     {
         if ($this->status === NotificationStatus::Read) {
