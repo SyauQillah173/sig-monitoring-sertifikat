@@ -1,7 +1,10 @@
 <?php
 
 use Illuminate\Foundation\Application;
+use Illuminate\Foundation\Bootstrap\LoadConfiguration;
 use Illuminate\Http\Request;
+use Illuminate\Filesystem\FilesystemServiceProvider;
+use Illuminate\View\ViewServiceProvider;
 
 define('LARAVEL_START', microtime(true));
 
@@ -16,5 +19,10 @@ require __DIR__.'/../vendor/autoload.php';
 // Bootstrap Laravel and handle the request...
 /** @var Application $app */
 $app = require_once __DIR__.'/../bootstrap/app.php';
+
+$app->afterBootstrapping(LoadConfiguration::class, function (Application $app): void {
+    $app->register(FilesystemServiceProvider::class, force: true);
+    $app->register(ViewServiceProvider::class, force: true);
+});
 
 $app->handleRequest(Request::capture());
