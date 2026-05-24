@@ -317,7 +317,7 @@ const initializeSmartForms = () => {
             return;
         }
 
-        if (button.dataset.preserveLoadingLabel === 'true') {
+        if (button.dataset.preserveLoadingLabel === 'true' || button.classList.contains('ui-login-submit')) {
             return;
         }
 

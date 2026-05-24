@@ -113,7 +113,7 @@
                     </div>
 
                     <div class="space-y-3">
-                        <flux:button variant="primary" type="submit" class="ui-login-submit" data-test="login-button" data-preserve-loading-label="true">
+                        <flux:button variant="primary" type="submit" class="ui-login-submit" data-test="login-button">
                             {{ __('Login Sistem') }}
                         </flux:button>
                     </div>
