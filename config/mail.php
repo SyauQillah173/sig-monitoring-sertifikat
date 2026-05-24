@@ -1,5 +1,10 @@
 <?php
 
+$appName = (string) env('APP_NAME', 'Laravel');
+$mailFromName = (string) env('MAIL_FROM_NAME', $appName);
+$mailFromName = str_replace(['${APP_NAME}', '$(APP_NAME)'], $appName, $mailFromName);
+$mailFromName = trim($mailFromName) !== '' ? $mailFromName : $appName;
+
 return [
 
     /*
@@ -112,7 +117,7 @@ return [
 
     'from' => [
         'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
-        'name' => env('MAIL_FROM_NAME', env('APP_NAME', 'Laravel')),
+        'name' => $mailFromName,
     ],
 
 ];
