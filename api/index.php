@@ -13,19 +13,28 @@ try {
             mkdir($viewDirectory, 0777, true);
         }
 
-        $cachePaths = [
+        $runtimeValues = [
             'APP_PACKAGES_CACHE' => $cacheDirectory.'/packages.php',
             'APP_SERVICES_CACHE' => $cacheDirectory.'/services.php',
             'APP_CONFIG_CACHE' => $cacheDirectory.'/config.php',
             'APP_ROUTES_CACHE' => $cacheDirectory.'/routes.php',
             'APP_EVENTS_CACHE' => $cacheDirectory.'/events.php',
             'VIEW_COMPILED_PATH' => $viewDirectory,
+            'SESSION_DRIVER' => 'database',
+            'SESSION_PATH' => '/',
+            'CACHE_STORE' => 'database',
+            'QUEUE_CONNECTION' => 'sync',
         ];
 
-        foreach ($cachePaths as $key => $value) {
+        foreach ($runtimeValues as $key => $value) {
             $_ENV[$key] = $value;
             $_SERVER[$key] = $value;
             putenv($key.'='.$value);
+        }
+
+        if (($_ENV['SESSION_DOMAIN'] ?? $_SERVER['SESSION_DOMAIN'] ?? null) === 'null') {
+            unset($_ENV['SESSION_DOMAIN'], $_SERVER['SESSION_DOMAIN']);
+            putenv('SESSION_DOMAIN');
         }
     }
 
