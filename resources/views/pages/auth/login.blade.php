@@ -114,8 +114,7 @@
 
                     <div class="space-y-3">
                         <flux:button variant="primary" type="submit" class="ui-login-submit" data-test="login-button">
-                            <span>{{ __('Masuk ke Sistem') }}</span>
-                            <flux:icon name="arrow-right" variant="mini" class="size-4" />
+                            {{ __('Login Sistem') }}
                         </flux:button>
                     </div>
                 </form>
