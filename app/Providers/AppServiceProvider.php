@@ -22,6 +22,8 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use Livewire\Compiler\CacheManager;
+use Livewire\Compiler\Compiler;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -30,7 +32,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->configureLivewireCacheForVercel();
     }
 
     /**
@@ -90,6 +92,19 @@ class AppServiceProvider extends ServiceProvider
                 ->action('Ganti Password', $url)
                 ->line('Link ini hanya berlaku sementara. Abaikan email ini jika Anda tidak meminta reset password.')
                 ->salutation('Hormat kami, SIG Monitoring Sertifikat');
+        });
+    }
+
+    protected function configureLivewireCacheForVercel(): void
+    {
+        if (! (isset($_ENV['VERCEL']) || isset($_SERVER['VERCEL']))) {
+            return;
+        }
+
+        $cacheDirectory = '/tmp/laravel-cache/livewire';
+
+        $this->app->afterResolving('livewire.compiler', function (Compiler $compiler) use ($cacheDirectory): void {
+            $compiler->cacheManager = new CacheManager($cacheDirectory);
         });
     }
 
