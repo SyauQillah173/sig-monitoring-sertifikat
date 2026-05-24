@@ -9,6 +9,7 @@ use App\Models\NotificationSetting;
 use App\Models\SertifikatSistemSemen;
 use App\Services\AuditLogger;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Mail;
@@ -21,7 +22,9 @@ class CementCertificateEmailNotificationService
      */
     public function sendDueReminders(): array
     {
-        if (! $this->emailEnabled()) {
+        $settings = $this->settings();
+
+        if (($settings['is_email_enabled'] ?? '0') !== '1') {
             return ['recipients' => 0, 'certificates' => 0, 'sent' => 0, 'failed' => 0, 'skipped' => true];
         }
 
@@ -30,9 +33,9 @@ class CementCertificateEmailNotificationService
             ->where('is_active', true)
             ->whereHas('perusahaanSemen', fn ($query) => $query->where('is_active', true))
             ->get();
-        $recipients = $this->recipients($contacts);
+        $recipients = $this->recipients($contacts, $settings);
 
-        $certificates = $this->dueCertificates();
+        $certificates = $this->dueCertificates($settings);
         if ($certificates === []) {
             return ['recipients' => count($recipients), 'certificates' => 0, 'sent' => 0, 'failed' => 0, 'skipped' => false];
         }
@@ -81,10 +84,10 @@ class CementCertificateEmailNotificationService
     /**
      * @return array<int, array<string, mixed>>
      */
-    private function dueCertificates(): array
+    private function dueCertificates(array $settings): array
     {
         $today = now()->startOfDay();
-        $maxDay = max($this->warningDays());
+        $maxDay = max($this->warningDays($settings));
         $limit = $today->copy()->addDays($maxDay);
 
         return $this->formatSystemCertificates(
@@ -130,7 +133,7 @@ class CementCertificateEmailNotificationService
      * @param  EloquentCollection<int, KontakPerusahaan>  $contacts
      * @return array<int, array{email: string, name: string, contact: KontakPerusahaan|null}>
      */
-    private function recipients(EloquentCollection $contacts): array
+    private function recipients(EloquentCollection $contacts, array $settings): array
     {
         $recipients = $contacts->map(fn (KontakPerusahaan $contact) => [
             'email' => $contact->email,
@@ -138,7 +141,7 @@ class CementCertificateEmailNotificationService
             'contact' => $contact,
         ]);
 
-        $internalEmail = NotificationSetting::query()->where('key', 'internal_recipient_email')->value('value');
+        $internalEmail = $settings['internal_recipient_email'] ?? null;
         if (filter_var($internalEmail, FILTER_VALIDATE_EMAIL)) {
             $recipients->push([
                 'email' => $internalEmail,
@@ -168,22 +171,39 @@ class CementCertificateEmailNotificationService
         ]);
     }
 
-    private function emailEnabled(): bool
-    {
-        return NotificationSetting::query()->where('key', 'is_email_enabled')->value('value') === '1';
-    }
-
     /**
      * @return list<int>
      */
-    private function warningDays(): array
+    private function warningDays(array $settings): array
     {
-        $value = NotificationSetting::query()->where('key', 'expiry_warning_days')->value('value') ?: '90,60,30,7';
+        $value = $settings['expiry_warning_days'] ?? '90,60,30,7';
 
         return collect(explode(',', $value))
             ->map(fn ($day) => (int) trim($day))
             ->filter(fn (int $day) => $day > 0)
             ->values()
             ->all() ?: [90, 60, 30, 7];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function settings(): array
+    {
+        $defaults = [
+            'internal_recipient_email' => 'abdullahsyauqillah02@gmail.com',
+            'expiry_warning_days' => '90,60,30,7',
+            'is_email_enabled' => '1',
+        ];
+
+        try {
+            return NotificationSetting::query()
+                ->whereIn('key', array_keys($defaults))
+                ->pluck('value', 'key')
+                ->union($defaults)
+                ->all();
+        } catch (QueryException) {
+            return $defaults;
+        }
     }
 }

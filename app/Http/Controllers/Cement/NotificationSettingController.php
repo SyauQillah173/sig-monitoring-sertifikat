@@ -7,6 +7,7 @@ use App\Mail\CementNotificationTestMail;
 use App\Models\NotificationSetting;
 use App\Services\AuditLogger;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
@@ -31,12 +32,21 @@ class NotificationSettingController extends Controller
             'is_email_enabled' => ['required', 'boolean'],
         ]);
 
-        foreach ($payload as $key => $value) {
-            NotificationSetting::query()->updateOrCreate(
-                ['key' => $key],
-                ['value' => (string) $value],
-            );
-        }
+        $now = now();
+
+        NotificationSetting::query()->upsert(
+            collect($payload)
+                ->map(fn (mixed $value, string $key): array => [
+                    'key' => $key,
+                    'value' => (string) $value,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ])
+                ->values()
+                ->all(),
+            ['key'],
+            ['value', 'updated_at'],
+        );
 
         app(AuditLogger::class)->log('notification_settings_updated', null, 'Pengaturan email notifikasi diperbarui.', null, $payload);
 
@@ -82,10 +92,14 @@ class NotificationSettingController extends Controller
             'is_email_enabled' => '1',
         ];
 
-        return NotificationSetting::query()
-            ->pluck('value', 'key')
-            ->union($defaults)
-            ->all();
+        try {
+            return NotificationSetting::query()
+                ->pluck('value', 'key')
+                ->union($defaults)
+                ->all();
+        } catch (QueryException) {
+            return $defaults;
+        }
     }
 
     /**

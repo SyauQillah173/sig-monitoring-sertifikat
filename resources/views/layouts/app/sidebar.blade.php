@@ -116,11 +116,6 @@
                                             <flux:icon name="cog-6-tooth" variant="outline" class="size-4" />
                                             <span>Pengaturan Akun</span>
                                         </a>
-                                        <a href="{{ route('security.edit') }}" class="ui-workspace-user-dropdown-link" wire:navigate.hover>
-                                            <flux:icon name="shield-check" variant="outline" class="size-4" />
-                                            <span>Keamanan Akun</span>
-                                        </a>
-
                                         <form method="POST" action="{{ route('logout') }}">
                                             @csrf
 

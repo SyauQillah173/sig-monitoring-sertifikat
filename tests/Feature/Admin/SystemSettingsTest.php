@@ -99,28 +99,35 @@ class SystemSettingsTest extends TestCase
         $this->actingAs($admin)
             ->get(route('admin.dashboard'))
             ->assertOk()
-            ->assertSee('Keamanan Akun')
+            ->assertDontSee('Keamanan Akun')
             ->assertSee('Pengaturan Sistem')
             ->assertSee('Manajemen User');
     }
 
-    public function test_security_settings_navigation_item_is_available_for_account_settings(): void
+    public function test_security_settings_navigation_item_is_folded_into_account_settings(): void
     {
         $this->seed(RolePermissionSeeder::class);
 
         $petugas = User::factory()->create()->assignAppRole(UserRole::Petugas);
 
+        NavigationItem::query()->create([
+            'group_label' => 'Platform',
+            'label' => 'Keamanan Akun',
+            'route_name' => 'security.edit',
+            'icon' => 'shield-check',
+            'sort_order' => 31,
+            'allowed_roles' => UserRole::values(),
+            'is_active' => true,
+        ]);
+
         $this->actingAs($petugas)
             ->get(route('petugas.dashboard'))
             ->assertOk()
             ->assertSee('Pengaturan Akun')
-            ->assertSee('Keamanan Akun');
+            ->assertDontSee('Keamanan Akun');
 
         $this->assertDatabaseHas('navigation_items', [
             'route_name' => 'security.edit',
-            'label' => 'Keamanan Akun',
-            'icon' => 'shield-check',
-            'is_active' => true,
         ]);
     }
 

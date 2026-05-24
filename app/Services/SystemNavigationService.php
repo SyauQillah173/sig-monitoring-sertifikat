@@ -33,6 +33,11 @@ class SystemNavigationService
         $defaults = collect($this->defaultItems());
 
         try {
+            NavigationItem::query()
+                ->whereIn('route_name', $this->deprecatedRouteNames())
+                ->where('is_active', true)
+                ->update(['is_active' => false]);
+
             $existingRouteNames = NavigationItem::query()
                 ->whereIn('route_name', $defaults->pluck('route_name'))
                 ->pluck('route_name')
@@ -122,7 +127,6 @@ class SystemNavigationService
             ['group_label' => 'Platform', 'label' => 'Sertifikat Produk', 'route_name' => 'cement.products.index', 'icon' => 'home', 'sort_order' => 10, 'allowed_roles' => UserRole::values()],
             ['group_label' => 'Platform', 'label' => 'Sertifikat Sistem', 'route_name' => 'cement.system.index', 'icon' => 'clipboard-document-check', 'sort_order' => 20, 'allowed_roles' => UserRole::values()],
             ['group_label' => 'Platform', 'label' => 'Pengaturan Akun', 'route_name' => 'profile.edit', 'icon' => 'cog-6-tooth', 'sort_order' => 30, 'allowed_roles' => UserRole::values()],
-            ['group_label' => 'Platform', 'label' => 'Keamanan Akun', 'route_name' => 'security.edit', 'icon' => 'shield-check', 'sort_order' => 31, 'allowed_roles' => UserRole::values()],
             ['group_label' => 'Platform', 'label' => 'Notifikasi Internal', 'route_name' => 'notifications.index', 'icon' => 'bell', 'sort_order' => 40, 'allowed_roles' => UserRole::values()],
             ['group_label' => 'Pengaturan Sistem', 'label' => 'Konfigurasi Sistem', 'route_name' => 'system-settings.index', 'icon' => 'adjustments-horizontal', 'sort_order' => 100, 'allowed_roles' => [UserRole::Admin->value]],
             ['group_label' => 'Pengaturan Sistem', 'label' => 'Manajemen User', 'route_name' => 'admin.users.index', 'icon' => 'users', 'sort_order' => 110, 'allowed_roles' => [UserRole::Admin->value]],
@@ -143,6 +147,7 @@ class SystemNavigationService
             try {
                 return NavigationItem::query()
                     ->where('is_active', true)
+                    ->whereNotIn('route_name', $this->deprecatedRouteNames())
                     ->ordered()
                     ->get()
                     ->filter(fn (NavigationItem $item) => Route::has($item->route_name))
@@ -197,6 +202,14 @@ class SystemNavigationService
 
     private function cacheKey(string $role): string
     {
-        return "navigation.items.{$role}.v1";
+        return "navigation.items.{$role}.v2";
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function deprecatedRouteNames(): array
+    {
+        return ['security.edit'];
     }
 }
