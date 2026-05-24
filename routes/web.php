@@ -36,12 +36,38 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LandingPageController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Report\CertificateMonitoringReportController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [LandingPageController::class, 'index'])->name('home');
 Route::get('/landing-summary', [LandingPageController::class, 'summary'])
     ->middleware('throttle:60,1')
     ->name('home.summary');
+
+Route::get('api/cron/cement-certificate-reminders', function (Request $request) {
+    $secret = (string) env('CRON_SECRET');
+
+    if ($secret === '') {
+        return response()->json(['message' => 'CRON_SECRET is not configured.'], 503);
+    }
+
+    if (! hash_equals('Bearer '.$secret, (string) $request->header('Authorization'))) {
+        return response()->json(['message' => 'Unauthorized.'], 401);
+    }
+
+    Artisan::call('notifications:generate-certificate-expiry');
+    $internalOutput = trim(Artisan::output());
+
+    Artisan::call('cement:send-certificate-email-notifications');
+    $emailOutput = trim(Artisan::output());
+
+    return response()->json([
+        'ok' => true,
+        'internal_notifications' => $internalOutput,
+        'email_notifications' => $emailOutput,
+    ]);
+})->name('cron.cement-certificate-reminders');
 
 Route::middleware('guest')->group(function () {
     Route::get('forgot-password', [PasswordResetCodeController::class, 'request'])->name('password.request');

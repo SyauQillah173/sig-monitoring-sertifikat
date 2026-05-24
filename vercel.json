@@ -22,5 +22,11 @@
       "src": "/(.*)",
       "dest": "/api/index.php"
     }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/cement-certificate-reminders",
+      "schedule": "15 0 * * *"
+    }
   ]
 }
