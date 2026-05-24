@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'enforce_admin_2fa' => env('SECURITY_ENFORCE_ADMIN_2FA', env('APP_ENV') === 'production'),
+    'enforce_admin_2fa' => env('SECURITY_ENFORCE_ADMIN_2FA', false),
 
     'headers' => [
         'content_security_policy' => env(
