@@ -9,7 +9,6 @@ use Illuminate\Database\QueryException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Schema;
 
 class SystemNavigationService
 {
@@ -31,23 +30,40 @@ class SystemNavigationService
 
     public function ensureDefaultsExist(): void
     {
-        if (! Schema::hasTable('navigation_items')) {
+        $defaults = collect($this->defaultItems());
+
+        try {
+            $existingRouteNames = NavigationItem::query()
+                ->whereIn('route_name', $defaults->pluck('route_name'))
+                ->pluck('route_name')
+                ->all();
+        } catch (QueryException) {
             return;
         }
 
-        foreach ($this->defaultItems() as $item) {
-            NavigationItem::query()->firstOrCreate(
-                ['route_name' => $item['route_name']],
-                [
-                    'group_label' => $item['group_label'],
-                    'label' => $item['label'],
-                    'icon' => $item['icon'],
-                    'sort_order' => $item['sort_order'],
-                    'allowed_roles' => $item['allowed_roles'],
-                    'is_active' => true,
-                ],
-            );
+        $now = now();
+
+        $missingRows = $defaults
+            ->reject(fn (array $item): bool => in_array($item['route_name'], $existingRouteNames, true))
+            ->map(fn (array $item): array => [
+                'route_name' => $item['route_name'],
+                'group_label' => $item['group_label'],
+                'label' => $item['label'],
+                'icon' => $item['icon'],
+                'sort_order' => $item['sort_order'],
+                'allowed_roles' => json_encode(array_values($item['allowed_roles'])),
+                'is_active' => true,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ])
+            ->values()
+            ->all();
+
+        if ($missingRows === []) {
+            return;
         }
+
+        NavigationItem::query()->insert($missingRows);
 
         $this->clearCache();
     }

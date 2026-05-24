@@ -18,7 +18,7 @@
                     </button>
 
                     <div class="ui-workspace-sidebar-scroll">
-                        <a href="{{ route($dashboardRoute) }}" class="ui-workspace-brand" wire:navigate>
+                        <a href="{{ route($dashboardRoute) }}" class="ui-workspace-brand" wire:navigate.hover>
                             <span class="ui-workspace-brand-mark">
                                 <x-app-logo-icon class="h-6 w-auto" />
                             </span>
@@ -46,7 +46,7 @@
                                                     'ui-workspace-nav-item',
                                                     'is-active' => $item['current'],
                                                 ])
-                                                wire:navigate
+                                                wire:navigate.hover
                                             >
                                                 <span class="ui-workspace-nav-icon">
                                                     <flux:icon :name="$item['icon']" variant="outline" class="size-5" />
@@ -112,11 +112,11 @@
                                     </div>
 
                                     <div class="ui-workspace-user-dropdown-actions">
-                                        <a href="{{ route('profile.edit') }}" class="ui-workspace-user-dropdown-link" wire:navigate>
+                                        <a href="{{ route('profile.edit') }}" class="ui-workspace-user-dropdown-link" wire:navigate.hover>
                                             <flux:icon name="cog-6-tooth" variant="outline" class="size-4" />
                                             <span>Pengaturan Akun</span>
                                         </a>
-                                        <a href="{{ route('security.edit') }}" class="ui-workspace-user-dropdown-link" wire:navigate>
+                                        <a href="{{ route('security.edit') }}" class="ui-workspace-user-dropdown-link" wire:navigate.hover>
                                             <flux:icon name="shield-check" variant="outline" class="size-4" />
                                             <span>Keamanan Akun</span>
                                         </a>

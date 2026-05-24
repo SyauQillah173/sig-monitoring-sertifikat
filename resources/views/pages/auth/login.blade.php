@@ -66,17 +66,30 @@
                         >
                     </div>
 
-                    <div class="ui-login-field">
+                    <div class="ui-login-field" x-data="{ showPassword: false }">
                         <label class="ui-login-field-label" for="password">Password</label>
-                        <input
-                            id="password"
-                            name="password"
-                            type="password"
-                            class="ui-input"
-                            required
-                            autocomplete="current-password"
-                            placeholder="Masukkan password Anda"
-                        >
+                        <div class="ui-password-input-wrap">
+                            <input
+                                id="password"
+                                name="password"
+                                x-bind:type="showPassword ? 'text' : 'password'"
+                                class="ui-input ui-password-input"
+                                required
+                                autocomplete="current-password"
+                                placeholder="Masukkan password Anda"
+                            >
+
+                            <button
+                                type="button"
+                                class="ui-password-toggle"
+                                x-on:click="showPassword = ! showPassword"
+                                x-bind:aria-label="showPassword ? 'Sembunyikan password' : 'Tampilkan password'"
+                                x-bind:aria-pressed="showPassword.toString()"
+                            >
+                                <flux:icon name="eye" variant="outline" class="size-5" x-show="! showPassword" />
+                                <flux:icon name="eye-slash" variant="outline" class="size-5" x-show="showPassword" x-cloak />
+                            </button>
+                        </div>
                     </div>
 
                     <div class="ui-login-utility">

@@ -3,8 +3,8 @@
 namespace App\Services;
 
 use App\Models\SystemSetting;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Schema;
 
 class SystemSettingService
 {
@@ -25,18 +25,32 @@ class SystemSettingService
      */
     public function savePublicLandingSettings(array $values): void
     {
-        foreach ($this->publicLandingDefaults() as $key => $default) {
-            SystemSetting::query()->updateOrCreate(
-                ['key' => $key],
-                [
-                    'value' => (string) ($values[$key] ?? $default),
-                    'group' => 'public_landing',
-                    'label' => $this->labels()[$key] ?? $key,
-                ],
-            );
-        }
+        $labels = $this->labels();
+        $now = now();
 
-        Cache::forget('system-settings.public_landing.v1');
+        $rows = collect($this->publicLandingDefaults())
+            ->map(fn (string $default, string $key): array => [
+                'key' => $key,
+                'value' => (string) ($values[$key] ?? $default),
+                'group' => 'public_landing',
+                'label' => $labels[$key] ?? $key,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ])
+            ->values()
+            ->all();
+
+        SystemSetting::query()->upsert(
+            $rows,
+            ['key'],
+            ['value', 'group', 'label', 'updated_at'],
+        );
+
+        Cache::put(
+            'system-settings.public_landing.v1',
+            collect($rows)->pluck('value', 'key')->all(),
+            now()->addMinutes(5),
+        );
     }
 
     /**
@@ -49,14 +63,14 @@ class SystemSettingService
             default => [],
         };
 
-        if (! Schema::hasTable('system_settings')) {
+        try {
+            $stored = SystemSetting::query()
+                ->where('group', $group)
+                ->pluck('value', 'key')
+                ->all();
+        } catch (QueryException) {
             return $defaults;
         }
-
-        $stored = SystemSetting::query()
-            ->where('group', $group)
-            ->pluck('value', 'key')
-            ->all();
 
         return array_replace($defaults, $stored);
     }

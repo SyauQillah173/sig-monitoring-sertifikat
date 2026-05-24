@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\DatabaseBackup;
 use App\Models\SystemSetting;
 use App\Models\User;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
@@ -28,14 +29,14 @@ class SystemBackupService
     {
         $defaults = $this->defaultSettings();
 
-        if (! Schema::hasTable('system_settings')) {
+        try {
+            $stored = SystemSetting::query()
+                ->where('group', 'system_backup')
+                ->pluck('value', 'key')
+                ->all();
+        } catch (QueryException) {
             return $defaults;
         }
-
-        $stored = SystemSetting::query()
-            ->where('group', 'system_backup')
-            ->pluck('value', 'key')
-            ->all();
 
         return array_replace($defaults, $stored);
     }
@@ -45,16 +46,26 @@ class SystemBackupService
      */
     public function saveSettings(array $values): void
     {
-        foreach ($this->defaultSettings() as $key => $default) {
-            SystemSetting::query()->updateOrCreate(
-                ['key' => $key],
-                [
-                    'value' => (string) ($values[$key] ?? $default),
-                    'group' => 'system_backup',
-                    'label' => $this->labels()[$key] ?? $key,
-                ],
-            );
-        }
+        $labels = $this->labels();
+        $now = now();
+
+        $rows = collect($this->defaultSettings())
+            ->map(fn (string $default, string $key): array => [
+                'key' => $key,
+                'value' => (string) ($values[$key] ?? $default),
+                'group' => 'system_backup',
+                'label' => $labels[$key] ?? $key,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ])
+            ->values()
+            ->all();
+
+        SystemSetting::query()->upsert(
+            $rows,
+            ['key'],
+            ['value', 'group', 'label', 'updated_at'],
+        );
     }
 
     public function create(?User $user = null, string $triggeredBy = DatabaseBackup::TRIGGER_MANUAL): DatabaseBackup

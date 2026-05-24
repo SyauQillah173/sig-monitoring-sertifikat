@@ -11,6 +11,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class NavigationItemController extends Controller
 {
@@ -33,7 +34,7 @@ class NavigationItemController extends Controller
     {
         $items = $request->validate([
             'items' => ['required', 'array'],
-            'items.*.id' => ['required', 'integer', 'exists:navigation_items,id'],
+            'items.*.id' => ['required', 'integer'],
             'items.*.group_label' => ['required', 'string', 'max:80'],
             'items.*.label' => ['required', 'string', 'max:80'],
             'items.*.icon' => ['required', 'string', Rule::in($this->navigation->availableIconNames())],
@@ -43,18 +44,44 @@ class NavigationItemController extends Controller
             'items.*.is_active' => ['nullable', 'boolean'],
         ])['items'];
 
-        foreach ($items as $item) {
-            NavigationItem::query()
-                ->whereKey($item['id'])
-                ->update([
-                    'group_label' => $item['group_label'],
-                    'label' => $item['label'],
-                    'icon' => $item['icon'],
-                    'sort_order' => $item['sort_order'],
-                    'allowed_roles' => array_values($item['allowed_roles'] ?? []),
-                    'is_active' => (bool) ($item['is_active'] ?? false),
-                ]);
+        $ids = collect($items)
+            ->pluck('id')
+            ->map(fn (int|string $id): int => (int) $id)
+            ->unique()
+            ->values();
+
+        $routeNamesById = NavigationItem::query()
+            ->whereIn('id', $ids)
+            ->pluck('route_name', 'id');
+
+        if ($routeNamesById->count() !== $ids->count()) {
+            throw ValidationException::withMessages([
+                'items' => 'Sebagian menu tidak ditemukan. Muat ulang halaman lalu coba lagi.',
+            ]);
         }
+
+        $now = now();
+
+        $rows = collect($items)
+            ->map(fn (array $item): array => [
+                'id' => (int) $item['id'],
+                'group_label' => $item['group_label'],
+                'label' => $item['label'],
+                'route_name' => $routeNamesById[(int) $item['id']],
+                'icon' => $item['icon'],
+                'sort_order' => (int) $item['sort_order'],
+                'allowed_roles' => json_encode(array_values($item['allowed_roles'] ?? [])),
+                'is_active' => (bool) ($item['is_active'] ?? false),
+                'created_at' => $now,
+                'updated_at' => $now,
+            ])
+            ->all();
+
+        NavigationItem::query()->upsert(
+            $rows,
+            ['id'],
+            ['group_label', 'label', 'route_name', 'icon', 'sort_order', 'allowed_roles', 'is_active', 'updated_at'],
+        );
 
         $this->navigation->clearCache();
 

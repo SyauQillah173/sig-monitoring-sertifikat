@@ -1775,6 +1775,8 @@
 
     .ui-workspace-user-dropdown {
         @apply border-slate-200 bg-white/98 shadow-[0_24px_60px_-36px_rgba(15,23,42,0.18)] dark:border-white/10 dark:bg-slate-950/96 dark:shadow-[0_28px_70px_-42px_rgba(2,8,23,0.95)];
+        background-color: rgb(255 255 255);
+        backdrop-filter: none;
         box-shadow:
             0 28px 64px -38px rgba(15, 23, 42, 0.2),
             0 14px 24px -18px rgba(79, 70, 229, 0.08),
@@ -1782,6 +1784,7 @@
     }
 
     .dark .ui-workspace-user-dropdown {
+        background-color: rgb(15 23 42);
         box-shadow:
             0 28px 70px -42px rgba(2, 8, 23, 0.95),
             0 14px 24px -18px rgba(20, 184, 166, 0.06),
@@ -1789,7 +1792,7 @@
     }
 
     .ui-workspace-user-dropdown-card {
-        @apply border-slate-200 bg-slate-50/80 dark:border-white/8 dark:bg-white/[0.03];
+        @apply border-slate-200 bg-white dark:border-white/8 dark:bg-slate-900;
     }
 
     .ui-workspace-user-dropdown-name {
@@ -3008,7 +3011,6 @@
         box-shadow: 0 12px 24px -16px rgba(79, 70, 229, 0.55);
     }
 
-    .ui-workspace-user-dropdown,
     .ui-panel,
     .ui-form-panel,
     .ui-table-shell,
@@ -3021,7 +3023,6 @@
         @apply border border-indigo-200/70 bg-[#dfe4f7]/82 shadow-[0_28px_80px_-52px_rgba(79,70,229,0.22)] backdrop-blur-2xl;
     }
 
-    .dark .ui-workspace-user-dropdown,
     .dark .ui-panel,
     .dark .ui-form-panel,
     .dark .ui-table-shell,
@@ -3513,6 +3514,18 @@
 
     .ui-login-field .ui-input {
         @apply relative z-10;
+    }
+
+    .ui-password-input-wrap {
+        @apply relative;
+    }
+
+    .ui-password-input {
+        padding-right: 3.5rem;
+    }
+
+    .ui-password-toggle {
+        @apply absolute right-3 top-1/2 z-20 inline-flex size-10 -translate-y-1/2 items-center justify-center rounded-full border border-indigo-200 bg-white/90 text-slate-500 shadow-[0_12px_26px_-18px_rgba(79,70,229,0.45)] transition duration-200 hover:border-indigo-300 hover:bg-white hover:text-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:ring-offset-2 focus:ring-offset-[#dfe4f7] dark:border-white/10 dark:bg-slate-950/88 dark:text-slate-300 dark:hover:border-white/20 dark:hover:bg-slate-900 dark:hover:text-white dark:focus:ring-teal-300 dark:focus:ring-offset-slate-900;
     }
 
     @media (max-width: 767px) {
