@@ -207,12 +207,13 @@ Ada dua jenis dokumen:
 - Bisa didownload dari tombol Dokumen.
 
 Template sertifikat:
-- Default ada di public/images/Sertifikat.jpg.
+- Default ada di public/images/Sertifikat.optimized.jpg.
 - Admin bisa upload template baru dari:
   Pemeliharaan Data > Template Sertifikat
 - Upload template hanya mengganti background.
 - Posisi teks tetap dari layout sistem.
 - Template paling aman portrait A4 dan area tengah kosong.
+- Template akan dikompres otomatis agar PDF tetap aman saat berjalan di Vercel.
 
 
 11. NOTIFIKASI INTERNAL DAN EMAIL TINDAK LANJUT ISO
@@ -440,6 +441,58 @@ Catatan GitHub terbaru:
 - Workflow sudah dirapikan agar memakai actions/checkout@v4 dan actions/setup-node@v4.
 - Matrix test CI dibatasi ke PHP 8.3 dan 8.4.
 - Step kredensial Flux dibuat opsional. Jika secret FLUX_USERNAME dan FLUX_LICENSE_KEY belum ada, step dilewati agar CI tidak gagal cepat.
-- Verifikasi lokal terakhir: composer lint:check berhasil, npm.cmd run build berhasil, php artisan test berhasil 108 passed dan 6 skipped.
+- Verifikasi lokal saat update 23 Mei: composer lint:check berhasil, npm.cmd run build berhasil, php artisan test berhasil 108 passed dan 6 skipped.
+
+
+19. UPDATE TERKINI 25 MEI 2026
+--------------------------------------------------
+Perbaikan deployment Vercel:
+- Error Target class [view] sudah ditangani dengan memastikan service provider Laravel yang dibutuhkan runtime Vercel terdaftar saat bootstrap.
+- Error bootstrap/cache harus writable sudah ditangani dengan memakai path cache/session/view yang writable pada runtime Vercel.
+- Error session file read-only sudah dihindari dengan penggunaan session/database pada production.
+- Error SSL TiDB karena cafile lokal Windows sudah diperbaiki agar konfigurasi sertifikat tidak menunjuk path C:\xampp saat di Vercel.
+
+Perbaikan dokumen/download/upload:
+- Error Vercel FUNCTION_RESPONSE_PAYLOAD_TOO_LARGE pada tombol Dokumen disebabkan template public/images/Sertifikat.jpg berukuran sekitar 7,9 MB ikut tertanam di PDF.
+- Template lama diganti dengan public/images/Sertifikat.optimized.jpg berukuran sekitar 228 KB.
+- Dokumen ringkasan sertifikat sekarang memakai template kecil agar response PDF tidak terlalu besar.
+- File sertifikat asli dan bukti audit tetap private download.
+- Upload file sertifikat baru di Vercel disimpan ke tabel stored_files, bukan filesystem sementara Vercel.
+- Migration baru: 2026_05_25_034000_create_stored_files_table.
+- Service baru: App\Services\CertificateFileStorage.
+- Model baru: App\Models\StoredFile.
+- Jika file lama tidak bisa didownload karena dulu tersimpan di filesystem sementara Vercel, upload ulang dari menu Edit Sertifikat.
+
+Perbaikan template sertifikat:
+- Upload template dari Pemeliharaan Data > Template Sertifikat dikompres otomatis.
+- Format JPG, JPEG, PNG, dan WEBP tetap diterima.
+- Template aktif bisa disimpan lewat storage service dan dipakai sebagai data URI saat membuat PDF.
+- Setting lama yang masih menunjuk images/Sertifikat.jpg otomatis diarahkan ke images/Sertifikat.optimized.jpg.
+
+Perbaikan email dan notifikasi:
+- MAIL_FROM_NAME tidak lagi tampil literal sebagai ${APP_NAME}; nama pengirim sudah mengikuti nama aplikasi yang benar.
+- Reminder manual sertifikat ISO sekarang mengirim email dan juga membuat Notifikasi Internal.
+- Notifikasi internal dibuat untuk role admin dan petugas.
+- Notifikasi yang sudah ditinjau bisa ditandai terbaca/diproses, dan sistem sudah disiapkan agar notifikasi lama bisa disembunyikan/dibersihkan sesuai retensi.
+
+Perbaikan UI/login:
+- Tombol password di login memakai icon mata sederhana tanpa lingkaran.
+- Teks tombol login tetap terlihat saat loading/submitting.
+- Menu Keamanan Akun yang duplikatif sudah dikonsolidasikan ke Pengaturan Akun.
+- Dropdown akun dibuat lebih solid agar teks dan menu terbaca.
+- Navigasi antar menu dioptimalkan untuk mengurangi query dan loading yang terlalu lama.
+
+Perbaikan Vercel cron:
+- vercel.json sudah memakai cron untuk /cron/cement-certificate-reminders.
+- Jadwal Vercel cron: 15 0 * * *.
+- Endpoint cron menjalankan reminder sertifikat agar email dan notifikasi internal bisa dikirim otomatis di production.
+
+Verifikasi update 25 Mei 2026:
+- php artisan test tests\Feature\Cement\CementImportTest.php tests\Feature\Cement\CementCertificatePrivateDownloadTest.php tests\Feature\Cement\CementSystemCertificateTest.php tests\Feature\Certificates\CertificateCrudTest.php berhasil: 33 passed, 197 assertions.
+- php artisan test tests\Feature\Reports\CertificateMonitoringReportTest.php tests\Feature\Certificates\CertificateMonitoringFilterTest.php berhasil: 5 passed, 16 assertions.
+- php artisan migrate --force berhasil menjalankan migration stored_files.
+- php artisan migrate:status --pending menunjukkan tidak ada pending migration.
+- Production domain https://sig-monitoring-sertifikat.vercel.app merespons 200.
+- public/images/Sertifikat.optimized.jpg di production merespons 200 dengan ukuran sekitar 228 KB.
 
 SELESAI

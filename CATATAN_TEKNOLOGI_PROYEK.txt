@@ -128,6 +128,7 @@ Email dan notifikasi:
 - certificate_email_notification_logs
 - notifications
 - password_reset_codes
+- stored_files
 
 Audit:
 - audit_logs
@@ -426,12 +427,13 @@ Fungsi:
 - Desain memakai template gambar sebagai background dan data diambil otomatis dari database.
 
 Template sertifikat:
-- Default: public/images/Sertifikat.jpg
+- Default: public/images/Sertifikat.optimized.jpg
 - Admin bisa upload template baru dari:
   Pemeliharaan Data > Template Sertifikat
 - Template aktif disimpan di notification_settings dengan key certificate_template_path.
 - Format upload: JPG, JPEG, PNG, WEBP.
-- Template bukan dokumen sensitif, sehingga boleh berada di public/images.
+- Template upload akan dikompres otomatis agar PDF aman di Vercel.
+- Template aktif bisa disimpan melalui CertificateFileStorage dan dipakai sebagai data URI saat render PDF.
 
 Catatan:
 - Upload template hanya mengganti background.
@@ -525,6 +527,8 @@ Private file:
 - File sertifikat ISO dan bukti audit ISO hanya boleh didownload admin/petugas.
 - Guest tidak boleh download file asli ISO/bukti audit.
 - Landing publik tidak boleh menampilkan nomor sertifikat, file, bukti audit, catatan internal, atau path storage.
+- Pada Vercel, file sertifikat baru disimpan ke tabel stored_files lewat App\Services\CertificateFileStorage.
+- Pada lokal, default tetap memakai filesystem local agar development tetap sederhana.
 
 Audit:
 - audit_logs
@@ -607,13 +611,15 @@ Upload file sertifikat asli:
 - Disimpan di disk non-public/private.
 - Diakses lewat route download authenticated.
 - Format diterima: PDF, JPG, JPEG, PNG.
-- Batas upload sertifikat cement: 10 MB.
+- Batas upload lokal: 10 MB.
+- Batas upload Vercel default: 3 MB, agar download/response tetap aman di serverless.
+- Konfigurasi: CERTIFICATE_FILE_STORAGE dan CERTIFICATE_UPLOAD_MAX_KB.
 
 Upload template sertifikat:
-- Disimpan di public/images/certificate-templates.
+- Disimpan lewat CertificateFileStorage dan dipakai sebagai data URI saat render dokumen.
 - Template bukan file rahasia.
 - Format diterima: JPG, JPEG, PNG, WEBP.
-- Batas upload template: 12 MB.
+- File template dikompres otomatis ke JPEG yang lebih kecil.
 
 Jangan simpan file upload langsung di folder root project.
 
@@ -739,7 +745,7 @@ Kondisi visual terbaru:
 Verifikasi terakhir:
 - npm.cmd run build berhasil.
 - composer lint:check berhasil.
-- php artisan test terakhir berhasil dengan 108 passed dan 6 skipped.
+- php artisan test saat update 23 Mei berhasil dengan 108 passed dan 6 skipped.
 - php artisan test --filter=CementImportTest terakhir berhasil dengan 8 passed setelah update import Excel.
 
 Update Import Excel:
@@ -757,5 +763,55 @@ Update GitHub/CI:
 - PHP 8.5 dikeluarkan dari matrix karena project distabilkan pada PHP 8.3/8.4.
 - Step composer auth Flux dibuat opsional; jika secrets FLUX_USERNAME dan FLUX_LICENSE_KEY kosong, step dilewati.
 - Pint sudah dijalankan untuk merapikan file yang membuat linter gagal.
+
+
+19. UPDATE TERKINI 25 MEI 2026
+--------------------------------------------------
+Perbaikan deploy Vercel:
+- Runtime Vercel memakai vercel-php@0.9.0 melalui api/index.php.
+- Bootstrap Laravel untuk Vercel sudah disesuaikan agar service view tersedia.
+- Path cache/session/view production dibuat writable agar tidak memakai folder read-only.
+- SESSION_DRIVER production diarahkan ke database agar session tidak memakai file read-only.
+- Konfigurasi TiDB SSL tidak lagi memakai path CA lokal Windows saat berjalan di Vercel.
+
+Storage dokumen baru:
+- Service: app/Services/CertificateFileStorage.php
+- Model: app/Models/StoredFile.php
+- Migration: database/migrations/2026_05_25_034000_create_stored_files_table.php
+- Config: config/filesystems.php pada key certificate_files.
+- Env:
+  CERTIFICATE_FILE_STORAGE=local
+  CERTIFICATE_UPLOAD_MAX_KB=10240
+- Pada Vercel, default storage file sertifikat menjadi database jika tabel stored_files tersedia.
+- Isi file disimpan base64 di kolom longText contents agar kompatibel dengan MySQL/TiDB dan SQLite test.
+
+Dokumen PDF Vercel-safe:
+- File public/images/Sertifikat.jpg lama sekitar 7,9 MB sudah dihapus dari repo.
+- File baru public/images/Sertifikat.optimized.jpg sekitar 228 KB menjadi default template.
+- Controller dokumen memetakan setting lama images/Sertifikat.jpg ke images/Sertifikat.optimized.jpg.
+- Upload template dikompres otomatis supaya tidak membuat PDF terlalu besar.
+- Error Vercel FUNCTION_RESPONSE_PAYLOAD_TOO_LARGE pada halaman dokumen sudah ditangani.
+
+Perbaikan email, notifikasi, dan cron:
+- MAIL_FROM_NAME tidak lagi tampil literal sebagai ${APP_NAME} pada email reset password.
+- Manual reminder ISO sekarang mengirim email dan membuat notifikasi internal.
+- Vercel cron ditambahkan:
+  path: /cron/cement-certificate-reminders
+  schedule: 15 0 * * *
+- Endpoint cron menjalankan reminder otomatis untuk production.
+
+Perbaikan UI/performa:
+- Login password field memiliki tombol mata sederhana.
+- Teks tombol login tetap terlihat saat loading.
+- Menu Keamanan Akun duplikatif dihapus/dikonsolidasikan ke Pengaturan Akun.
+- Dropdown akun dibuat lebih solid agar terbaca.
+- Query navigasi dan layout composer dioptimalkan agar perpindahan menu tidak terlalu berat.
+
+Verifikasi 25 Mei 2026:
+- php artisan test tests\Feature\Cement\CementImportTest.php tests\Feature\Cement\CementCertificatePrivateDownloadTest.php tests\Feature\Cement\CementSystemCertificateTest.php tests\Feature\Certificates\CertificateCrudTest.php berhasil: 33 passed, 197 assertions.
+- php artisan test tests\Feature\Reports\CertificateMonitoringReportTest.php tests\Feature\Certificates\CertificateMonitoringFilterTest.php berhasil: 5 passed, 16 assertions.
+- php artisan migrate --force berhasil menjalankan stored_files.
+- php artisan migrate:status --pending menunjukkan tidak ada pending migration.
+- Production domain dan asset Sertifikat.optimized.jpg sudah merespons 200.
 
 SELESAI

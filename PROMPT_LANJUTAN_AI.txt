@@ -106,16 +106,21 @@ Yang sudah dibangun:
 - Export Excel/PDF.
 - Dokumen ringkasan sertifikat PDF per data.
 - Upload template sertifikat dari Pemeliharaan Data.
+- Template PDF default terbaru memakai public/images/Sertifikat.optimized.jpg agar aman di Vercel.
+- Upload template sertifikat dikompres otomatis sebelum dipakai PDF.
 - Master referensi anti-typo.
 - Perusahaan semen dan kontak email perusahaan.
 - Manajemen user oleh admin.
 - Pengaturan Email & Notifikasi.
 - Reset password memakai kode 6 digit via email.
 - File sertifikat asli private download.
+- File sertifikat dan bukti audit baru di Vercel disimpan melalui tabel stored_files memakai App\Services\CertificateFileStorage.
 - Security headers, rate limit, audit log.
 - Catatan keamanan ISO 27001 readiness.
 - Notifikasi Internal untuk Sertifikat Sistem ISO.
 - Email reminder ISO dengan tabel tindak lanjut Surveilen 1, Surveilen 2, dan Renewal.
+- Manual reminder ISO mengirim email dan membuat Notifikasi Internal.
+- Vercel cron /cron/cement-certificate-reminders sudah disiapkan untuk reminder otomatis production.
 - Link aksi email membuka form konfirmasi di web, bukan one-click update.
 - Renewal membuat record Sertifikat Sistem baru agar riwayat lama tidak hilang.
 - CMS Pengaturan Sistem sudah ada dan terpisah dari Pengaturan Akun.
@@ -214,16 +219,19 @@ Download dokumen:
 - Sertifikat Sistem > tombol Dokumen di kartu ISO.
 
 Template sertifikat:
-- Default: public/images/Sertifikat.jpg
+- Default: public/images/Sertifikat.optimized.jpg
 - Upload admin: Pemeliharaan Data > Template Sertifikat
 - Controller: app/Http/Controllers/Cement/CertificateTemplateController.php
 - View: resources/views/cement/maintenance/certificate-template/edit.blade.php
 - Setting aktif: notification_settings key certificate_template_path
+- Storage: App\Services\CertificateFileStorage
+- Setting lama images/Sertifikat.jpg otomatis diarahkan ke images/Sertifikat.optimized.jpg
 
 Catatan:
 - Template hanya background.
 - Data teks tetap otomatis dari database.
 - Hasil PDF ditargetkan 1 halaman A4 portrait.
+- Jangan mengembalikan file public/images/Sertifikat.jpg lama yang berukuran besar karena bisa memicu FUNCTION_RESPONSE_PAYLOAD_TOO_LARGE di Vercel.
 
 
 8. EMAIL DAN NOTIFIKASI
@@ -246,6 +254,8 @@ Tabel:
 - kontak_perusahaan
 - certificate_email_notification_logs
 - password_reset_codes
+- notifications
+- stored_files
 
 Command:
 - php artisan cement:send-certificate-email-notifications
@@ -469,6 +479,14 @@ Jika mengubah dokumen sertifikat:
 - Generate PDF SNI dan ISO.
 - Pastikan tetap 1 halaman.
 - Pastikan template aktif terbaca.
+- Pastikan public/images/Sertifikat.optimized.jpg tetap dipakai sebagai fallback.
+- Pastikan response tidak memicu FUNCTION_RESPONSE_PAYLOAD_TOO_LARGE di Vercel.
+
+Jika mengubah upload/download file sertifikat:
+- Pastikan service App\Services\CertificateFileStorage tetap dipakai.
+- Jalankan php artisan migrate --force jika tabel stored_files belum ada.
+- Coba upload file kecil, download file asli, dan generate dokumen PDF.
+- Di Vercel gunakan CERTIFICATE_FILE_STORAGE=database dan CERTIFICATE_UPLOAD_MAX_KB=3072.
 
 
 14. PROMPT SIAP PAKAI UNTUK AI BERIKUTNYA
@@ -506,6 +524,13 @@ Kondisi terbaru:
 - Dokumen ringkasan sertifikat PDF sudah ada dan memakai template background.
 - Admin bisa upload template sertifikat dari Pemeliharaan Data > Template Sertifikat.
 - File sertifikat asli harus private download.
+- Storage file sertifikat Vercel memakai tabel stored_files lewat CertificateFileStorage.
+- Template PDF default memakai public/images/Sertifikat.optimized.jpg.
+- Error FUNCTION_RESPONSE_PAYLOAD_TOO_LARGE dokumen sudah ditangani dengan template optimized dan storage service.
+- MAIL_FROM_NAME tidak lagi tampil literal ${APP_NAME}.
+- Login password field punya icon mata sederhana dan teks tombol login tetap terlihat saat loading.
+- Menu Keamanan Akun duplikatif sudah dikonsolidasikan ke Pengaturan Akun.
+- Dropdown akun dibuat lebih solid dan navigasi/layout composer dioptimalkan.
 - Audit log dan catatan ISO 27001 readiness sudah ada.
 - CMS Pengaturan Sistem sudah ada: Manajemen User, Tampilan Publik, Menu Aplikasi, Backup & Maintenance, Email & Notifikasi, Template Sertifikat, Pemeliharaan Data.
 - Landing publik punya toggle privasi ISO agar data sensitif tidak bocor.
@@ -514,6 +539,10 @@ Kondisi terbaru:
 - Backup otomatis sudah ada: database_backups, storage/app/private/backups, command system:backup, command system:backup-cleanup.
 - Role aktif hanya admin dan petugas.
 - Role pimpinan sudah dihapus dari enum, route, seeder, permission, navigation_items, dan database lama lewat migration 2026_05_22_223000_remove_pimpinan_role_from_system.
+- Reminder manual dan otomatis ISO harus menghasilkan email serta Notifikasi Internal.
+- Vercel cron aktif di vercel.json:
+  path: /cron/cement-certificate-reminders
+  schedule: 15 0 * * *
 
 Jangan lakukan:
 - Jangan kembalikan istilah BPOM/halal/pangan/makanan/minuman.
@@ -529,6 +558,9 @@ Jangan lakukan:
 - Jangan memasukkan PHP 8.5 ke matrix CI sebelum dependency project benar-benar siap.
 - Jangan membuat CI wajib memakai secret Flux kalau secret belum tersedia; step Flux harus tetap opsional.
 - Jangan menghapus data/tabel penting tanpa diminta jelas.
+- Jangan restore public/images/Sertifikat.jpg lama berukuran besar.
+- Jangan simpan file sertifikat production ke path public.
+- Jangan bypass CertificateFileStorage ketika mengubah upload/download/cetak dokumen.
 
 Sebelum edit, baca:
 - CATATAN_TEKNOLOGI_PROYEK.txt
@@ -548,8 +580,13 @@ Setelah edit, jalankan:
 Verifikasi terakhir yang sudah pernah berhasil:
 - npm.cmd run build
 - composer lint:check
-- php artisan test: 108 passed, 6 skipped
-- php artisan test --filter=CementImportTest: 8 passed setelah update import Excel
+- php artisan test pernah full-pass pada update 23 Mei: 108 passed, 6 skipped
+- php artisan test --filter=CementImportTest pernah berhasil: 8 passed setelah update import Excel
+- Paket test update 25 Mei berhasil: 33 passed, 197 assertions
+- Paket test report/filter update 25 Mei berhasil: 5 passed, 16 assertions
+- php artisan migrate --force berhasil menjalankan stored_files
+- php artisan migrate:status --pending menunjukkan tidak ada pending migration
+- Production root dan asset public/images/Sertifikat.optimized.jpg merespons 200
 
 Status GitHub Actions terakhir:
 - Workflow lint dan tests sudah diperbaiki.
@@ -557,6 +594,25 @@ Status GitHub Actions terakhir:
 - Jika checks masih merah, buka Details pada run terbaru dan cek log step awal seperti composer auth, composer install, npm install, npm run build, atau phpunit.
 
 Lanjutkan dengan hati-hati, ikuti pola kode yang sudah ada, dan jaga konsistensi domain semen.
+
+
+15. UPDATE TERKINI 25 MEI 2026
+--------------------------------------------------
+Commit production terbaru yang perlu diingat:
+- 98dc10a Make certificate documents Vercel-safe
+
+Inti perubahan:
+- Dokumen/cetak/download di Vercel dibuat aman dari payload terlalu besar.
+- Template sertifikat besar lama diganti dengan public/images/Sertifikat.optimized.jpg.
+- Upload template dikompres otomatis.
+- File sertifikat dan bukti audit baru di Vercel disimpan ke tabel stored_files.
+- Manual reminder ISO sekarang sinkron: email dan Notifikasi Internal sama-sama dibuat.
+- Vercel cron menjalankan reminder otomatis lewat /cron/cement-certificate-reminders.
+- UI login, dropdown akun, dan navigasi sudah dipoles serta dioptimalkan.
+
+Catatan produksi:
+- Jika dokumen lama tidak bisa diunduh karena dulu tersimpan di filesystem sementara Vercel, upload ulang file dari menu edit.
+- Jangan tampilkan password/env secret di dokumentasi, log, atau commit.
 
 
 SELESAI

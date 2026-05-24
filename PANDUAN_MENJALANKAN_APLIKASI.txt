@@ -55,6 +55,8 @@ DB_PASSWORD=
 
 QUEUE_CONNECTION=sync
 FILESYSTEM_DISK=local
+CERTIFICATE_FILE_STORAGE=local
+CERTIFICATE_UPLOAD_MAX_KB=10240
 
 MAIL_MAILER=log
 MAIL_FROM_ADDRESS="managementsystembpe@gmail.com"
@@ -66,6 +68,11 @@ Catatan:
 - Jika memakai Gmail SMTP, MAIL_PASSWORD wajib App Password Gmail, bukan password login biasa.
 - Jika app password Gmail berisi spasi, hapus spasinya atau bungkus dengan tanda kutip.
 - APP_URL harus sama dengan alamat server yang sedang dipakai. Jika menjalankan server di 127.0.0.1:8082, APP_URL juga harus http://127.0.0.1:8082 agar link email notifikasi bisa dibuka.
+- CERTIFICATE_FILE_STORAGE=local dipakai untuk development lokal.
+- CERTIFICATE_UPLOAD_MAX_KB=10240 artinya upload sertifikat lokal maksimal 10 MB.
+- Untuk Vercel production, gunakan storage database atau biarkan default Vercel membaca environment:
+  CERTIFICATE_FILE_STORAGE=database
+  CERTIFICATE_UPLOAD_MAX_KB=3072
 
 
 5. INSTALL DEPENDENCY
@@ -389,6 +396,9 @@ Aturan sekarang:
 - File sertifikat ISO dan bukti audit ISO hanya boleh didownload admin/petugas.
 - Guest tidak bisa download file asli ISO atau bukti audit.
 - Semua download file sensitif dicatat di audit_logs.
+- Pada lokal, file baru disimpan di private storage.
+- Pada Vercel, file baru disimpan melalui tabel stored_files agar tidak hilang karena filesystem serverless sementara.
+- Jika file lama yang pernah diupload sebelum update Vercel-safe tidak bisa dibuka, upload ulang file tersebut dari menu Edit Sertifikat.
 
 Jika upload lama tidak muncul, pastikan folder storage dan permission benar.
 
@@ -399,7 +409,7 @@ Template sertifikat adalah gambar background untuk dokumen ringkasan PDF.
 
 Default template:
 
-public/images/Sertifikat.jpg
+public/images/Sertifikat.optimized.jpg
 
 Admin bisa upload template baru dari:
 
@@ -407,10 +417,13 @@ Pemeliharaan Data > Template Sertifikat
 
 Ketentuan:
 - Format: JPG, JPEG, PNG, WEBP.
-- Maksimal 12 MB.
+- Upload akan dikompres otomatis menjadi JPEG yang lebih kecil.
+- Batas upload mengikuti CERTIFICATE_UPLOAD_MAX_KB.
 - Disarankan portrait A4.
 - Area tengah sebaiknya kosong agar teks data sertifikat terbaca.
 - Upload template hanya mengganti background, data sertifikat tetap otomatis dari database.
+- Setting lama yang masih menunjuk images/Sertifikat.jpg otomatis diarahkan ke images/Sertifikat.optimized.jpg.
+- Template besar tidak disarankan karena bisa membuat response PDF terlalu besar di Vercel.
 
 Download dokumen bisa dicoba dari:
 - Sertifikat Produk > tombol Dokumen pada baris sertifikat.
@@ -707,6 +720,19 @@ Email tidak terkirim:
 - Jalankan php artisan config:clear.
 - Pastikan email otomatis di menu Pengaturan Email & Notifikasi sudah aktif.
 
+Email pengirim masih tampil ${APP_NAME}:
+- Pastikan APP_NAME dan MAIL_FROM_NAME di .env benar.
+- Jalankan:
+  php artisan config:clear
+- Kirim ulang email. Email lama yang sudah terkirim tidak bisa berubah.
+
+Error Vercel "FUNCTION_RESPONSE_PAYLOAD_TOO_LARGE" saat dokumen/download:
+- Biasanya terjadi karena template gambar atau file response terlalu besar.
+- Pastikan memakai public/images/Sertifikat.optimized.jpg.
+- Upload template baru akan dikompres otomatis.
+- Untuk Vercel, gunakan CERTIFICATE_UPLOAD_MAX_KB=3072.
+- Jika dokumen lama masih bermasalah, reset template sertifikat atau upload ulang file sertifikat yang diperlukan.
+
 Backup gagal karena mysqldump tidak ditemukan:
 - Pastikan XAMPP MySQL terinstall.
 - Cek file:
@@ -781,7 +807,7 @@ Hasil verifikasi terakhir:
 - Build frontend berhasil.
 - composer lint:check berhasil.
 - Build frontend berhasil.
-- Test Laravel terakhir berhasil: 108 passed, 6 skipped.
+- Test Laravel pada update 23 Mei berhasil: 108 passed, 6 skipped.
 - Test Import Excel terakhir berhasil: 8 passed.
 
 Catatan Import Excel terbaru:
@@ -790,6 +816,43 @@ Catatan Import Excel terbaru:
 - Text bebas/typo tetap ditolak di Preview Data.
 - Master baru tidak dibuat otomatis dari import.
 - Data yang sudah ada di sistem tidak masuk lagi, hanya data baru yang disimpan.
+
+
+26. UPDATE TERKINI 25 MEI 2026
+--------------------------------------------------
+Perbaikan Vercel production:
+- Aplikasi sudah bisa dibuka di https://sig-monitoring-sertifikat.vercel.app.
+- Migration stored_files sudah dijalankan dengan php artisan migrate --force.
+- php artisan migrate:status --pending menunjukkan tidak ada pending migration.
+- Root production dan asset public/images/Sertifikat.optimized.jpg sudah merespons 200.
+
+Perbaikan dokumen, upload, download, dan cetak:
+- Template PDF default sekarang public/images/Sertifikat.optimized.jpg, bukan file template besar lama.
+- File public/images/Sertifikat.jpg lama yang terlalu besar sudah tidak dipakai.
+- Upload template sertifikat dikompres otomatis agar PDF tidak melebihi batas response Vercel.
+- File sertifikat dan bukti audit baru di Vercel disimpan ke tabel stored_files melalui App\Services\CertificateFileStorage.
+- Download file sensitif tetap wajib login dan role sesuai.
+- File lama yang pernah tersimpan di filesystem sementara Vercel perlu diupload ulang jika tidak bisa didownload.
+
+Perbaikan email, reminder, dan notifikasi:
+- MAIL_FROM_NAME tidak lagi tampil literal sebagai ${APP_NAME}.
+- Reminder manual ISO sekarang mengirim email dan membuat Notifikasi Internal.
+- Reminder otomatis production memakai Vercel cron:
+  /cron/cement-certificate-reminders
+  15 0 * * *
+- Email dan notifikasi internal tetap mengarahkan user ke form web untuk Surveilen 1, Surveilen 2, atau Renewal.
+
+Perbaikan UI dan performa:
+- Login memiliki tombol mata sederhana untuk melihat password.
+- Teks tombol login tetap terlihat saat proses submit/loading.
+- Menu Keamanan Akun yang duplikatif dikonsolidasikan ke Pengaturan Akun.
+- Dropdown akun dibuat lebih solid agar terbaca.
+- Query navigasi/layout dioptimalkan agar perpindahan menu lebih ringan.
+
+Verifikasi terbaru:
+- Paket test cement/import/private download/system certificate/certificate CRUD berhasil: 33 passed, 197 assertions.
+- Paket test report/filter monitoring berhasil: 5 passed, 16 assertions.
+- Commit deploy dokumen terbaru: 98dc10a Make certificate documents Vercel-safe.
 
 
 SELESAI

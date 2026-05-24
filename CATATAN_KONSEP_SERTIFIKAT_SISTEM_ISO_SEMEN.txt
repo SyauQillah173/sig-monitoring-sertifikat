@@ -233,4 +233,38 @@ Catatan GitHub/CI terbaru:
 - Workflow GitHub Actions sudah diperbaiki untuk lint dan test.
 - CI memakai PHP 8.3 dan 8.4.
 - Kredensial Flux dibuat opsional agar repo baru tetap bisa menjalankan CI walaupun secret FLUX_USERNAME dan FLUX_LICENSE_KEY belum diisi.
-- Verifikasi lokal terakhir tetap meliputi fitur ISO: php artisan test berhasil 108 passed dan 6 skipped.
+- Verifikasi lokal saat update 23 Mei tetap meliputi fitur ISO: php artisan test berhasil 108 passed dan 6 skipped.
+
+
+15. Update Terkini 25 Mei 2026
+--------------------------------------------------
+Perbaikan notifikasi ISO:
+- Reminder manual sertifikat ISO sekarang menghasilkan dua kanal sekaligus:
+  1. email reminder
+  2. Notifikasi Internal di aplikasi
+- Target notifikasi internal tetap role admin dan petugas.
+- Tombol aksi internal dan email tetap membuka form web untuk Surveilen 1, Surveilen 2, atau Renewal.
+- Klik email/internal tidak langsung mengubah database. Perubahan data tetap terjadi setelah form dikirim.
+- Setelah tindak lanjut diproses, notifikasi terkait dapat ditandai terbaca/diproses agar tidak terus tampil sebagai pekerjaan baru.
+
+Perbaikan cron production:
+- vercel.json sudah memiliki cron /cron/cement-certificate-reminders.
+- Jadwal cron production: 15 0 * * *.
+- Cron dipakai untuk menjalankan reminder otomatis di Vercel.
+- Untuk uji coba manual tetap bisa menjalankan command:
+  php artisan cement:send-certificate-email-notifications
+
+Perbaikan file ISO dan bukti audit di Vercel:
+- Upload file sertifikat ISO, file renewal, dan bukti audit sekarang memakai CertificateFileStorage.
+- Pada Vercel, file baru disimpan ke tabel stored_files agar tidak hilang setelah deploy.
+- Migration baru: 2026_05_25_034000_create_stored_files_table.
+- Download file ISO dan bukti audit tetap lewat controller yang wajib login admin/petugas dan tetap tercatat audit log.
+- Jika file lama tidak bisa didownload karena sebelumnya tersimpan di filesystem sementara Vercel, upload ulang dari menu edit/form tindak lanjut.
+
+Perbaikan dokumen ISO:
+- Dokumen ringkasan ISO memakai template public/images/Sertifikat.optimized.jpg.
+- Template lama public/images/Sertifikat.jpg diganti karena terlalu besar untuk response PDF Vercel.
+- Error FUNCTION_RESPONSE_PAYLOAD_TOO_LARGE pada dokumen PDF sudah ditangani dengan template terkompres.
+
+Verifikasi ISO terbaru:
+- Test Sertifikat Sistem ISO, manual reminder, notifikasi internal, follow up Surveilen/Renewal, upload file database storage, dan PDF dokumen berhasil dalam paket test 33 passed.
