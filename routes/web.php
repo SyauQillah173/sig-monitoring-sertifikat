@@ -45,7 +45,7 @@ Route::get('/landing-summary', [LandingPageController::class, 'summary'])
     ->middleware('throttle:60,1')
     ->name('home.summary');
 
-Route::get('api/cron/cement-certificate-reminders', function (Request $request) {
+Route::get('cron/cement-certificate-reminders', function (Request $request) {
     $secret = (string) env('CRON_SECRET');
 
     if ($secret === '') {
