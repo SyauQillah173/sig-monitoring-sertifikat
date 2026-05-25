@@ -1,0 +1,1000 @@
+CATATAN ANALISA PROYEK
+SIG MONITORING SERTIFIKAT PRODUK DAN SISTEM SEMEN
+Tanggal catatan: 25 Mei 2026
+Lokasi proyek: C:\xampp\htdocs\SIG
+==================================================
+
+
+1. IDENTITAS PROYEK
+--------------------------------------------------
+Nama aplikasi:
+SIG Monitoring Sertifikat
+
+Jenis aplikasi:
+Web dashboard untuk monitoring sertifikat produk semen dan sertifikat sistem manajemen ISO pada lokasi/pabrik semen.
+
+Domain utama:
+- Sertifikat Produk Semen
+- Sertifikat Sistem ISO Semen
+- Monitoring masa berlaku sertifikat
+- Reminder Surveilen 1, Surveilen 2, dan Renewal
+- Pengelolaan dokumen/file sertifikat
+- Export, import, audit log, dan backup sistem
+
+Target pengguna:
+- Admin
+- Petugas
+
+Tujuan utama aplikasi:
+- Membantu perusahaan memantau sertifikat produk semen dan sistem ISO secara terpusat.
+- Mengurangi risiko sertifikat terlambat diperpanjang.
+- Menyediakan data, laporan, dokumen, reminder email, dan notifikasi internal dalam satu sistem.
+
+
+2. MASALAH YANG DISELESAIKAN
+--------------------------------------------------
+Sebelum ada aplikasi:
+- Data sertifikat bisa tersebar di Excel, file lokal, email, atau folder manual.
+- Risiko typo tinggi karena input bebas.
+- Sulit memantau sertifikat yang akan habis masa berlakunya.
+- Reminder Surveilen/Renewal bisa terlupakan.
+- File sertifikat dan bukti audit bisa sulit ditemukan.
+- Laporan perlu dibuat manual.
+- Tidak ada audit log yang jelas untuk aktivitas penting.
+
+Setelah ada aplikasi:
+- Data sertifikat disimpan di database.
+- Master data dipakai agar input konsisten.
+- Dashboard menampilkan status sertifikat secara otomatis.
+- Email dan Notifikasi Internal mengingatkan tindak lanjut ISO.
+- File sertifikat dan bukti audit disimpan private.
+- Export Excel/PDF tersedia.
+- Aktivitas penting tercatat di audit log.
+- Backup sistem bisa dibuat manual dan otomatis.
+
+
+3. INPUT APLIKASI
+--------------------------------------------------
+Input adalah data yang dimasukkan user atau sistem ke aplikasi.
+
+3.1 Input dari Admin/Petugas
+- Login email dan password.
+- Kode reset password 6 digit.
+- Kode 2FA jika Two Factor Authentication aktif.
+- Data master kategori semen.
+- Data master merek semen.
+- Data master lokasi/pabrik.
+- Data master SNI semen.
+- Data master komoditi/jenis semen.
+- Data master LSPro.
+- Data master jenis sertifikasi.
+- Data master kemasan.
+- Data master peringkat Green Label.
+- Data master standar ISO.
+- Data perusahaan semen.
+- Data kontak email perusahaan.
+- Data sertifikat SNI.
+- Data sertifikat TKDN.
+- Data sertifikat Green Label.
+- Data sertifikat sistem ISO.
+- File sertifikat asli PDF/JPG/PNG.
+- File bukti audit ISO.
+- Template gambar sertifikat.
+- Pengaturan email dan notifikasi.
+- Pengaturan tampilan publik.
+- Pengaturan menu aplikasi.
+- Pengaturan backup dan maintenance.
+- File Excel untuk import data SNI, TKDN, dan Green Label.
+
+3.2 Input dari Sistem
+- Tanggal hari ini untuk menghitung status masa berlaku.
+- Scheduler Laravel untuk reminder dan backup otomatis.
+- Vercel Cron untuk menjalankan reminder di production.
+- Session login user.
+- Cache/config aplikasi.
+- Data request seperti IP, user agent, dan waktu akses untuk audit log.
+
+3.3 Input dari Environment/.env
+- APP_NAME
+- APP_ENV
+- APP_DEBUG
+- APP_URL
+- DB_CONNECTION
+- DB_HOST
+- DB_PORT
+- DB_DATABASE
+- DB_USERNAME
+- DB_PASSWORD
+- MAIL_MAILER
+- MAIL_HOST
+- MAIL_PORT
+- MAIL_USERNAME
+- MAIL_PASSWORD
+- MAIL_FROM_ADDRESS
+- MAIL_FROM_NAME
+- SESSION_DRIVER
+- QUEUE_CONNECTION
+- CERTIFICATE_FILE_STORAGE
+- CERTIFICATE_UPLOAD_MAX_KB
+- CRON_SECRET
+
+Catatan keamanan:
+File .env tidak boleh dipublikasikan atau masuk GitHub karena berisi konfigurasi rahasia.
+
+
+4. OUTPUT APLIKASI
+--------------------------------------------------
+Output adalah hasil yang diberikan aplikasi kepada user atau sistem lain.
+
+4.1 Output Tampilan
+- Landing page sebelum login.
+- Dashboard setelah login.
+- Dashboard Sertifikat Produk.
+- Dashboard Sertifikat Sistem ISO.
+- Halaman Notifikasi Internal.
+- Halaman Pengaturan Akun.
+- Halaman Pengaturan Sistem.
+- Halaman Pemeliharaan Data.
+- Halaman Import Excel.
+- Halaman Export Data.
+- Halaman Backup & Maintenance.
+
+4.2 Output Data dan Laporan
+- Ringkasan jumlah sertifikat.
+- Status masa berlaku: Aktif, Akan Berakhir, Kadaluarsa.
+- Distribusi sertifikat berdasarkan jenis.
+- Data sertifikat SNI.
+- Data sertifikat TKDN.
+- Data sertifikat Green Label.
+- Data sertifikat ISO.
+- Timeline audit ISO.
+- Laporan monitoring dalam PDF.
+- Export Excel per jenis sertifikat.
+- Export Excel semua data.
+- Template Excel import.
+
+4.3 Output Dokumen
+- Dokumen ringkasan sertifikat dalam PDF.
+- File sertifikat asli yang bisa didownload oleh user berizin.
+- File bukti audit ISO yang bisa didownload oleh user berizin.
+- Backup ZIP sistem.
+
+4.4 Output Notifikasi
+- Notifikasi Internal di aplikasi.
+- Email reset password.
+- Email test notifikasi.
+- Email reminder sertifikat ISO.
+- Email tindak lanjut Surveilen 1.
+- Email tindak lanjut Surveilen 2.
+- Email tindak lanjut Renewal.
+
+4.5 Output Audit dan Maintenance
+- Audit log login/logout.
+- Audit log gagal login.
+- Audit log CRUD data.
+- Audit log import/export.
+- Audit log download file sensitif.
+- Audit log upload/reset template sertifikat.
+- Audit log reminder email.
+- Audit log backup.
+- Riwayat backup.
+
+
+5. FITUR UTAMA APLIKASI
+--------------------------------------------------
+5.1 Landing Page Publik
+- Menampilkan ringkasan monitoring sertifikat.
+- Data publik bisa diatur melalui CMS Pengaturan Sistem.
+- Informasi sensitif tidak ditampilkan.
+
+5.2 Login dan Akun
+- Login memakai email dan password.
+- Reset password memakai kode 6 digit via email.
+- Two Factor Authentication memakai authenticator app.
+- Pengaturan profil dan keamanan akun.
+
+5.3 Dashboard Sertifikat Produk
+- Menampilkan data sertifikat produk semen.
+- Mendukung SNI, TKDN, dan Green Label.
+- Ada filter kategori, merek, SNI, LSPro, lokasi, dan status.
+- Ada ringkasan jumlah sertifikat.
+- Ada chart/donut komoditi.
+- Ada tabel data sertifikat.
+
+5.4 Dashboard Sertifikat Sistem ISO
+- Menampilkan ISO 9001, ISO 14001, ISO 45001, ISO 50001, ISO 37001, ISO 27001.
+- Data dikaitkan dengan lokasi/pabrik.
+- Ada status masa berlaku.
+- Ada tahap audit: initial, Surveilen 1, Surveilen 2, Renewal.
+- Ada dokumen ringkasan dan file sertifikat.
+
+5.5 Pemeliharaan Data
+- Admin mengelola master data dan data sertifikat.
+- Input memakai dropdown master agar tidak banyak typo.
+- Admin bisa mengelola perusahaan dan kontak email.
+
+5.6 Import Excel
+- Admin upload template Excel.
+- Sistem membaca data SNI, TKDN, dan Green Label.
+- Data masuk preview dulu.
+- Data typo atau master tidak cocok akan ditolak.
+- Data duplikat dilewati.
+- ID database dibuat otomatis.
+
+5.7 Export Excel dan PDF
+- Export data SNI.
+- Export data TKDN.
+- Export data Green Label.
+- Export semua data.
+- Export laporan PDF.
+- Download dokumen ringkasan sertifikat.
+
+5.8 Email dan Notifikasi Internal
+- Reminder manual dan otomatis.
+- Reminder dikirim ke email dan Notifikasi Internal.
+- Tindak lanjut Surveilen/Renewal tetap dilakukan lewat form web, bukan klik email langsung.
+
+5.9 Template Sertifikat
+- Admin bisa upload background dokumen sertifikat.
+- Template dikompres otomatis agar aman di Vercel.
+- Default memakai public/images/Sertifikat.optimized.jpg.
+
+5.10 Backup dan Maintenance
+- Admin bisa membuat backup manual.
+- Sistem bisa backup otomatis.
+- Backup disimpan private.
+- Ada cleanup backup lama.
+
+
+6. KEUNIKAN PROYEK
+--------------------------------------------------
+Keunikan proyek ini:
+
+1. Domain khusus semen
+Proyek ini tidak generic. Data dan istilah diarahkan khusus untuk monitoring sertifikat semen, seperti SNI semen, TKDN semen, Green Label semen, lokasi pabrik, dan ISO sistem semen.
+
+2. Menggabungkan sertifikat produk dan sistem ISO
+Aplikasi tidak hanya memantau sertifikat produk, tetapi juga sertifikat sistem ISO per lokasi/pabrik.
+
+3. Anti-typo dengan master data
+Input penting tidak dibiarkan bebas. Master data dipakai untuk menjaga konsistensi penulisan.
+
+4. Import Excel tetap aman
+User boleh mengetik manual di Excel, tetapi validasi utama ada di Preview Data pada web. Ini membuat import fleksibel tetapi tetap terkendali.
+
+5. Reminder dua kanal
+Reminder ISO tidak hanya lewat email, tetapi juga masuk ke Notifikasi Internal aplikasi.
+
+6. Tindak lanjut tidak one-click
+Link email atau notifikasi tidak langsung mengubah database. User tetap harus login dan submit form web. Ini lebih aman dan bisa diaudit.
+
+7. Vercel-safe storage
+Karena Vercel serverless tidak cocok untuk menyimpan file lokal jangka panjang, file baru di production bisa disimpan ke tabel stored_files.
+
+8. Dokumen PDF berbasis template
+Sistem bisa membuat dokumen ringkasan sertifikat otomatis dari data database dan template background.
+
+9. CMS pengaturan sistem
+Admin bisa mengatur tampilan publik, menu aplikasi, email, template, backup, dan maintenance dari web.
+
+10. Audit dan backup
+Aktivitas penting dicatat, dan backup sistem bisa dijalankan manual maupun otomatis.
+
+
+7. KEAMANAN YANG DIPAKAI
+--------------------------------------------------
+7.1 Autentikasi
+- Laravel Fortify.
+- Login email dan password.
+- Password di-hash oleh Laravel.
+- Reset password memakai kode 6 digit.
+- Two Factor Authentication berbasis TOTP/authenticator app.
+- Recovery code tersedia untuk 2FA.
+
+7.2 Otorisasi Role
+- Role admin.
+- Role petugas.
+- Spatie Laravel Permission untuk role/permission.
+- Middleware app.role untuk membatasi akses menu/route.
+
+Contoh pembagian:
+- Admin bisa akses pemeliharaan data, import, export, user management, pengaturan sistem, backup.
+- Petugas bisa melihat dan memproses bagian operasional sesuai akses.
+
+7.3 Middleware dan Rate Limit
+- auth untuk route yang butuh login.
+- verified untuk beberapa route akun.
+- password.confirm untuk bagian security.
+- throttle untuk route sensitif.
+- throttle:sensitive-download untuk download file.
+- throttle:sensitive-import untuk import dan proses berat.
+- throttle:sensitive-export untuk export.
+
+7.4 Proteksi CSRF
+- Form POST/PUT/PATCH/DELETE memakai CSRF token Laravel.
+- Tindak lanjut Surveilen/Renewal harus submit form web.
+
+7.5 File Private
+- File sertifikat asli tidak boleh public langsung.
+- File bukti audit ISO tidak boleh public langsung.
+- Download lewat controller yang cek login dan role.
+- Pada Vercel file baru bisa disimpan di database melalui stored_files.
+
+7.6 Audit Log
+Audit log mencatat:
+- login
+- logout
+- gagal login
+- perubahan data
+- import/export
+- download file sensitif
+- pengaturan email
+- reminder email
+- upload/reset template
+- backup
+- tindak lanjut ISO
+
+7.7 Security Headers
+- Middleware AddSecurityHeaders menambahkan header keamanan.
+- Tujuannya mengurangi risiko browser attack dasar.
+
+7.8 Backup Private
+- Backup disimpan di storage private.
+- Backup hanya boleh diakses admin.
+- Download/hapus backup dicatat audit log.
+
+7.9 Cron Secret
+- Endpoint cron Vercel memakai CRON_SECRET.
+- Request tanpa Authorization yang sesuai ditolak.
+
+7.10 Catatan Risiko Keamanan
+- APP_DEBUG harus false di production.
+- .env tidak boleh dipush ke GitHub.
+- Password SMTP/App Password tidak boleh ditulis di kode.
+- File backup dan file sertifikat tidak boleh berada di public folder.
+
+
+8. DESAIN YANG DIPAKAI
+--------------------------------------------------
+Konsep desain:
+- Dashboard perusahaan.
+- Modern.
+- Profesional.
+- Data-first.
+- Compact.
+- Responsif.
+- Mendukung light mode dan dark mode.
+
+Gaya visual:
+- Sidebar biru-violet.
+- Topbar floating.
+- Light mode lavender/periwinkle matte.
+- Dark mode navy.
+- Aksen indigo, blue, violet.
+- Card rounded, soft shadow, border halus.
+- Font Manrope.
+
+Prinsip desain:
+- Informasi utama cepat dibaca.
+- Tabel dan filter mudah dipakai.
+- Tombol aksi jelas.
+- Halaman sebelum login tetap rapi di mobile.
+- Tidak terlalu putih menyilaukan.
+- Tidak memakai ornamen berlebihan.
+
+Komponen UI:
+- Blade layout.
+- Blade partial.
+- Tailwind CSS.
+- Livewire Flux untuk beberapa komponen akun/settings.
+- Icon Flux/Lucide-style sesuai komponen yang tersedia.
+
+
+9. FRAMEWORK, LIBRARY, DAN BAHASA YANG DIPAKAI
+--------------------------------------------------
+9.1 Bahasa Pemrograman
+- PHP untuk backend.
+- Blade untuk template view Laravel.
+- JavaScript untuk interaksi frontend ringan.
+- CSS/Tailwind untuk styling.
+- SQL/MySQL untuk database.
+
+9.2 Framework Backend
+- Laravel 13
+
+Fungsi Laravel:
+- Routing
+- Controller
+- Middleware
+- Eloquent ORM
+- Query Builder
+- Migration
+- Seeder
+- Validation
+- Mail
+- Schedule
+- Artisan Command
+- Session
+- Cache
+- Storage
+- Blade View
+
+9.3 Framework/Library Frontend
+- Tailwind CSS 4
+- Vite
+- Livewire
+- Flux UI
+
+9.4 Library Auth dan Role
+- Laravel Fortify
+- Spatie Laravel Permission
+
+9.5 Library Excel
+- Maatwebsite Excel
+- PhpSpreadsheet melalui Maatwebsite Excel
+
+Dipakai untuk:
+- Membaca file Excel saat import.
+- Membuat template Excel.
+- Export data Excel.
+
+9.6 Library PDF
+- barryvdh/laravel-dompdf
+- DomPDF
+
+Dipakai untuk:
+- Export laporan PDF.
+- Dokumen ringkasan sertifikat.
+
+9.7 Library Development/Test
+- PHPUnit
+- Laravel Pint
+- Faker
+- Mockery
+- Collision
+- Laravel Pail
+
+9.8 Runtime/Deployment
+- Vercel
+- vercel-php runtime
+- Vercel Cron
+- GitHub repository
+- GitHub Actions untuk CI
+
+9.9 Database
+- MySQL pada lokal/XAMPP.
+- TiDB/MySQL-compatible pada production.
+
+
+10. FRAMEWORK UNTUK MENGHITUNG DATA
+--------------------------------------------------
+Pertanyaan:
+Framework untuk menghitung data itu pakai apa dan bahasa apa?
+
+Jawaban:
+Perhitungan data utama dilakukan di backend menggunakan PHP dengan Laravel.
+
+Bagian yang dipakai:
+- Eloquent ORM
+- Laravel Query Builder
+- Laravel Collection
+- Service class seperti CementDashboardService dan LandingPageSummaryService
+- SQL aggregate dari MySQL/TiDB seperti count, group by, dan query relasi
+
+Contoh data yang dihitung:
+- Total merek.
+- Total sertifikat SNI.
+- Total sertifikat TKDN.
+- Total Green Label.
+- Total sertifikat ISO.
+- Status Aktif/Akan Berakhir/Kadaluarsa.
+- Persentase chart/donut.
+- Jumlah data per jenis sertifikat.
+- Data sertifikat yang mendekati masa berlaku habis.
+- Jumlah dokumen yang tersedia.
+
+Logika status masa berlaku:
+- Aktif jika masa berlaku masih lebih dari 90 hari.
+- Akan Berakhir jika sisa masa berlaku kurang dari atau sama dengan 90 hari.
+- Kadaluarsa jika tanggal berlaku sudah lewat.
+
+Catatan:
+Excel hanya membantu input dan export. Perhitungan utama aplikasi tetap dilakukan oleh Laravel/PHP dan database, bukan oleh Excel.
+
+
+11. DATABASE UTAMA
+--------------------------------------------------
+Tabel/domain penting:
+
+User dan role:
+- users
+- roles
+- permissions
+- model_has_roles
+- role_has_permissions
+
+Master semen:
+- kategori_semen
+- merek_semen
+- lokasi_pabrik
+- cement_reference_values
+- iso_standards
+
+Sertifikat:
+- sertifikat_sni
+- sertifikat_tkdn
+- sertifikat_green_label
+- sertifikat_sistem_semen
+- sertifikat_sistem_audit_events
+
+Email dan notifikasi:
+- notification_settings
+- perusahaan_semen
+- kontak_perusahaan
+- certificate_email_notification_logs
+- password_reset_codes
+- notifications
+
+File dan storage:
+- stored_files
+
+Audit dan backup:
+- audit_logs
+- database_backups
+
+CMS:
+- system_settings
+- navigation_items
+
+Legacy:
+- categories
+- products
+- certificate_types
+- issuers
+- certificates
+- certificate_renewals
+
+
+12. ALUR UMUM APLIKASI
+--------------------------------------------------
+Diagram alur umum:
+
++----------------------+
+| User membuka web     |
++----------+-----------+
+           |
+           v
++----------------------+
+| Landing page publik  |
++----------+-----------+
+           |
+           v
++----------------------+
+| Login                |
++----------+-----------+
+           |
+           v
++----------------------+
+| Cek akun dan role    |
++----------+-----------+
+           |
+           v
++-----------------------------+
+| Dashboard sesuai role       |
+| Admin / Petugas             |
++-------------+---------------+
+              |
+              v
++-----------------------------+
+| Kelola / lihat data         |
+| Sertifikat dan laporan      |
++-------------+---------------+
+              |
+              v
++-----------------------------+
+| Output: dashboard, export,  |
+| PDF, email, notifikasi      |
++-----------------------------+
+
+
+13. ALUR LOGIN
+--------------------------------------------------
++----------------------+
+| User buka /login     |
++----------+-----------+
+           |
+           v
++----------------------+
+| Isi email/password   |
++----------+-----------+
+           |
+           v
++----------------------+
+| Laravel Fortify cek  |
+| kredensial           |
++----------+-----------+
+           |
+    salah  |  benar
+    +------+------+
+    |             |
+    v             v
++---------+   +----------------------+
+| Error   |   | Cek status akun      |
++---------+   +----------+-----------+
+                         |
+                         v
+              +----------------------+
+              | Jika 2FA aktif,     |
+              | minta kode TOTP     |
+              +----------+-----------+
+                         |
+                         v
+              +----------------------+
+              | Masuk dashboard     |
+              +----------------------+
+
+
+14. ALUR INPUT DATA SERTIFIKAT MANUAL
+--------------------------------------------------
++-------------------------+
+| Admin login             |
++------------+------------+
+             |
+             v
++-------------------------+
+| Pemeliharaan Data       |
++------------+------------+
+             |
+             v
++-------------------------+
+| Pilih jenis sertifikat  |
+| SNI/TKDN/Green/ISO      |
++------------+------------+
+             |
+             v
++-------------------------+
+| Isi form dan pilih      |
+| master data             |
++------------+------------+
+             |
+             v
++-------------------------+
+| Upload file jika ada    |
++------------+------------+
+             |
+             v
++-------------------------+
+| Validasi Laravel        |
++------------+------------+
+             |
+      gagal | berhasil
+      +-----+------+
+      |            |
+      v            v
++----------+  +----------------------+
+| Error    |  | Simpan database      |
++----------+  +----------+-----------+
+                         |
+                         v
+              +----------------------+
+              | Audit log tersimpan |
+              +----------------------+
+
+
+15. ALUR IMPORT EXCEL
+--------------------------------------------------
++---------------------------+
+| Admin download template   |
++-------------+-------------+
+              |
+              v
++---------------------------+
+| Admin isi data Excel      |
++-------------+-------------+
+              |
+              v
++---------------------------+
+| Upload Excel ke web       |
++-------------+-------------+
+              |
+              v
++---------------------------+
+| Maatwebsite Excel baca    |
+| file                      |
++-------------+-------------+
+              |
+              v
++---------------------------+
+| Preview Data              |
+| - validasi master         |
+| - cek typo                |
+| - cek duplikat            |
++-------------+-------------+
+              |
+       error | valid
+       +-----+------+
+       |            |
+       v            v
++-----------+ +----------------------+
+| Perbaiki  | | Simpan data baru     |
+| Excel     | | ke database          |
++-----------+ +----------+-----------+
+                         |
+                         v
+              +----------------------+
+              | Audit import         |
+              +----------------------+
+
+
+16. ALUR DOWNLOAD DOKUMEN / CETAK PDF
+--------------------------------------------------
++-----------------------------+
+| User klik tombol Dokumen    |
++--------------+--------------+
+               |
+               v
++-----------------------------+
+| Route cek auth, role,       |
+| dan throttle download       |
++--------------+--------------+
+               |
+               v
++-----------------------------+
+| Ambil data sertifikat       |
+| dari database               |
++--------------+--------------+
+               |
+               v
++-----------------------------+
+| Ambil template aktif        |
+| Sertifikat.optimized.jpg    |
+| atau template upload        |
++--------------+--------------+
+               |
+               v
++-----------------------------+
+| Render Blade PDF            |
++--------------+--------------+
+               |
+               v
++-----------------------------+
+| DomPDF membuat file PDF     |
++--------------+--------------+
+               |
+               v
++-----------------------------+
+| File PDF didownload         |
++-----------------------------+
+
+
+17. ALUR DOWNLOAD FILE SERTIFIKAT ASLI
+--------------------------------------------------
++-----------------------------+
+| User klik download file     |
++--------------+--------------+
+               |
+               v
++-----------------------------+
+| Cek auth dan role           |
++--------------+--------------+
+               |
+               v
++-----------------------------+
+| Ambil path file dari DB     |
++--------------+--------------+
+               |
+               v
++-----------------------------+
+| CertificateFileStorage      |
+| mencari file                |
++--------------+--------------+
+               |
+        lokal | Vercel/database
+        +-----+------+
+        |            |
+        v            v
++--------------+ +--------------------+
+| storage/app  | | tabel stored_files |
++------+-------+ +---------+----------+
+       |                   |
+       +---------+---------+
+                 |
+                 v
+      +----------------------+
+      | Stream/download file |
+      +----------+-----------+
+                 |
+                 v
+      +----------------------+
+      | Audit log            |
+      +----------------------+
+
+
+18. ALUR REMINDER SERTIFIKAT ISO
+--------------------------------------------------
++-----------------------------+
+| Scheduler / Vercel Cron     |
++--------------+--------------+
+               |
+               v
++-----------------------------+
+| Jalankan command reminder   |
++--------------+--------------+
+               |
+               v
++-----------------------------+
+| Cari sertifikat ISO yang    |
+| perlu tindak lanjut         |
++--------------+--------------+
+               |
+               v
++-----------------------------+
+| Tentukan aksi:              |
+| Surveilen 1 / 2 / Renewal   |
++--------------+--------------+
+               |
+               v
++-----------------------------+
+| Buat Notifikasi Internal    |
++--------------+--------------+
+               |
+               v
++-----------------------------+
+| Kirim Email Reminder        |
++--------------+--------------+
+               |
+               v
++-----------------------------+
+| User klik aksi              |
++--------------+--------------+
+               |
+               v
++-----------------------------+
+| Login dan submit form web   |
++--------------+--------------+
+               |
+               v
++-----------------------------+
+| Database diperbarui         |
++-----------------------------+
+
+
+19. ALUR BACKUP
+--------------------------------------------------
++-----------------------------+
+| Admin / Scheduler           |
++--------------+--------------+
+               |
+               v
++-----------------------------+
+| Jalankan system:backup      |
++--------------+--------------+
+               |
+               v
++-----------------------------+
+| Dump database               |
++--------------+--------------+
+               |
+               v
++-----------------------------+
+| Sertakan file storage       |
+| jika opsi aktif             |
++--------------+--------------+
+               |
+               v
++-----------------------------+
+| Buat ZIP backup             |
++--------------+--------------+
+               |
+               v
++-----------------------------+
+| Simpan private              |
++--------------+--------------+
+               |
+               v
++-----------------------------+
+| Catat database_backups      |
+| dan audit log               |
++-----------------------------+
+
+
+20. ARSITEKTUR SEDERHANA
+--------------------------------------------------
++------------------+        +------------------+
+| Browser User     | -----> | Laravel Routes   |
++------------------+        +---------+--------+
+                                      |
+                                      v
+                            +------------------+
+                            | Controller       |
+                            +---------+--------+
+                                      |
+                 +--------------------+--------------------+
+                 |                    |                    |
+                 v                    v                    v
+        +----------------+   +----------------+   +----------------+
+        | Service Class  |   | Eloquent Model |   | Mail/Export    |
+        +-------+--------+   +-------+--------+   +-------+--------+
+                |                    |                    |
+                v                    v                    v
+        +----------------+   +----------------+   +----------------+
+        | Business Logic |   | Database       |   | PDF/Excel/SMTP |
+        +----------------+   +----------------+   +----------------+
+
+
+21. KELEBIHAN PROYEK
+--------------------------------------------------
+1. Domain jelas dan sesuai kebutuhan monitoring sertifikat semen.
+2. Data lebih terpusat dibanding Excel manual.
+3. Master data mengurangi typo.
+4. Dashboard membantu membaca kondisi sertifikat cepat.
+5. Reminder ISO membantu mencegah terlambat Surveilen/Renewal.
+6. Email dan Notifikasi Internal berjalan bersama.
+7. Import Excel tetap fleksibel tetapi divalidasi ketat.
+8. Export Excel/PDF mendukung kebutuhan laporan.
+9. File sensitif tidak dibuat public.
+10. Audit log meningkatkan akuntabilitas.
+11. Backup dan cleanup tersedia.
+12. UI modern, responsive, dan punya light/dark mode.
+13. Production Vercel sudah disesuaikan untuk serverless.
+14. Template PDF optimized agar tidak terlalu besar.
+15. Role sudah disederhanakan menjadi admin dan petugas.
+
+
+22. KEKURANGAN / BATASAN PROYEK
+--------------------------------------------------
+1. Vercel serverless memiliki batasan untuk file besar dan response besar.
+2. File lama yang pernah diupload ke filesystem Vercel sebelum perbaikan bisa perlu upload ulang.
+3. Queue masih bisa sync jika belum memakai worker/queue production khusus.
+4. Email bergantung pada konfigurasi SMTP yang benar.
+5. Backup otomatis production perlu scheduler/cron yang aktif.
+6. Import Excel hanya untuk SNI, TKDN, dan Green Label; sertifikat sistem ISO masih lewat form web.
+7. Aplikasi belum menjadi mobile app native, masih web responsive.
+8. Belum ada object storage eksternal khusus seperti S3/Vercel Blob.
+9. Belum ada approval workflow bertingkat untuk validasi data.
+10. Belum ada tanda tangan digital dokumen PDF.
+11. Belum ada integrasi langsung ke sistem sertifikasi eksternal.
+12. Pengujian performa skala besar masih perlu dilakukan jika data makin banyak.
+
+
+23. SARAN PENGEMBANGAN LANJUTAN
+--------------------------------------------------
+1. Tambahkan object storage eksternal untuk file besar.
+2. Tambahkan queue worker production untuk email dan proses berat.
+3. Tambahkan approval workflow data sertifikat.
+4. Tambahkan dashboard khusus manajemen risiko sertifikat.
+5. Tambahkan notifikasi WhatsApp/Telegram jika dibutuhkan.
+6. Tambahkan tanda tangan digital atau QR verification pada PDF.
+7. Tambahkan audit report periodik.
+8. Tambahkan role tambahan jika struktur organisasi membutuhkan.
+9. Tambahkan import khusus sertifikat sistem ISO.
+10. Tambahkan testing performa untuk data besar.
+
+
+24. RINGKASAN UNTUK PRESENTASI
+--------------------------------------------------
+SIG Monitoring Sertifikat adalah aplikasi web berbasis Laravel yang digunakan untuk memantau sertifikat produk semen dan sertifikat sistem ISO pada lokasi/pabrik semen. Aplikasi ini menyediakan dashboard, master data anti-typo, import Excel, export Excel/PDF, dokumen sertifikat otomatis, reminder email, Notifikasi Internal, audit log, dan backup sistem.
+
+Input utama aplikasi adalah data master, data sertifikat, file sertifikat, file bukti audit, template sertifikat, file Excel, dan konfigurasi email. Output utama aplikasi adalah dashboard monitoring, status masa berlaku, laporan Excel/PDF, dokumen ringkasan sertifikat, email reminder, Notifikasi Internal, audit log, dan backup.
+
+Keunikan aplikasi ini adalah fokus pada domain semen, menggabungkan sertifikat produk dan sistem ISO, memiliki reminder Surveilen/Renewal dua kanal, serta menjaga file sensitif tetap private. Perhitungan data dilakukan oleh PHP Laravel melalui Eloquent, Query Builder, Collection, dan database MySQL/TiDB.
+
+
+25. KESIMPULAN
+--------------------------------------------------
+Proyek ini bukan hanya CRUD sertifikat biasa. Proyek ini adalah sistem monitoring operasional yang menggabungkan:
+- data produk semen
+- data ISO sistem manajemen
+- dashboard
+- reminder
+- dokumen PDF
+- import/export
+- keamanan file
+- audit log
+- backup
+- CMS pengaturan sistem
+
+Dengan desain lavender/periwinkle dan navy, aplikasi dibuat agar terlihat modern, profesional, dan nyaman digunakan sebagai dashboard internal perusahaan.
+
+
+SELESAI
