@@ -3323,24 +3323,39 @@
     .ui-landing-panel,
     .ui-auth-centered-card,
     .ui-login-panel {
-        @apply border border-indigo-200/70 bg-[#dfe4f7]/84 shadow-[0_28px_80px_-52px_rgba(79,70,229,0.24)];
-        background-image: none;
+        @apply border border-indigo-200/80 bg-[#dfe4f7] shadow-[0_28px_80px_-52px_rgba(79,70,229,0.24)];
+        background:
+            linear-gradient(180deg, #e3e8f9 0%, #d8def4 100%);
         backdrop-filter: none;
         -webkit-backdrop-filter: none;
+    }
+
+    .ui-landing-panel::before {
+        background:
+            radial-gradient(circle at top right, rgba(79, 70, 229, 0.10), transparent 30%),
+            linear-gradient(180deg, rgba(255,255,255,0.28) 0%, transparent 58%);
     }
 
     .dark .ui-landing-panel,
     .dark .ui-auth-centered-card,
     .dark .ui-login-panel {
         @apply border-white/10 bg-slate-900/72 shadow-[0_28px_80px_-52px_rgba(2,8,23,0.92)];
+        background: rgba(15, 23, 42, 0.72);
+    }
+
+    .dark .ui-landing-panel::before {
+        background:
+            radial-gradient(circle at top right, rgba(99, 102, 241, 0.14), transparent 32%),
+            linear-gradient(180deg, rgba(255,255,255,0.06) 0%, transparent 58%);
     }
 
     .ui-landing-subpanel,
     .ui-landing-stat,
     .ui-landing-activity-item,
     .ui-login-utility {
-        @apply border-indigo-200/60 bg-[#d6ddf3]/72 text-slate-700;
-        background-image: none;
+        @apply border-indigo-200/70 bg-[#eef1fb] text-slate-700;
+        background:
+            linear-gradient(180deg, #f5f7ff 0%, #e7ebfa 100%);
     }
 
     .dark .ui-landing-subpanel,
@@ -3348,6 +3363,7 @@
     .dark .ui-landing-activity-item,
     .dark .ui-login-utility {
         @apply border-indigo-400/16 bg-indigo-950/34 text-slate-300;
+        background: rgba(30, 27, 75, 0.34);
     }
 
     .ui-public-theme-toggle,
