@@ -971,7 +971,174 @@ Diagram alur umum:
 10. Tambahkan testing performa untuk data besar.
 
 
-24. RINGKASAN UNTUK PRESENTASI
+24. SARAN PENINGKATAN KEAMANAN
+--------------------------------------------------
+Walaupun proyek ini sudah memakai login, role, private download, audit log, 2FA, rate limit, dan backup, keamanan masih bisa ditingkatkan lagi. Berikut saran peningkatan keamanan yang cocok untuk pengembangan berikutnya.
+
+24.1 Wajibkan 2FA untuk Admin
+- Saat ini 2FA tersedia, tetapi bisa dibuat wajib untuk role admin.
+- Tujuannya agar akun admin tetap aman walaupun password bocor.
+- Petugas bisa dibuat opsional, sedangkan admin wajib.
+
+24.2 Gunakan Object Storage Private untuk File Besar
+- Untuk production jangka panjang, file sertifikat dan bukti audit sebaiknya disimpan di object storage private seperti S3, Vercel Blob private, atau storage lain yang mendukung signed URL.
+- Database storage cocok untuk file kecil/menengah, tetapi object storage lebih baik untuk file besar.
+- Download tetap lewat controller agar role dan audit log tetap berjalan.
+
+24.3 Enkripsi File Sensitif
+- File sertifikat dan bukti audit bisa dienkripsi sebelum disimpan.
+- Jika storage bocor, isi file tetap tidak langsung terbaca.
+- Kunci enkripsi harus disimpan aman di environment variable, bukan di kode.
+
+24.4 Antivirus / File Scanning Upload
+- File upload sebaiknya discan sebelum diterima.
+- Tujuannya mencegah upload file berbahaya yang menyamar sebagai PDF/JPG/PNG.
+- Validasi MIME dan ekstensi sudah membantu, tetapi scanning memberi lapisan tambahan.
+
+24.5 Batasi Ukuran dan Jenis File Lebih Ketat
+- Tetapkan batas upload production yang konservatif.
+- Contoh Vercel: 3 MB untuk sertifikat.
+- Tolak file yang tidak sesuai MIME asli.
+- Hindari menerima file executable, script, atau archive bebas.
+
+24.6 Session Security Lebih Ketat
+- Production harus memakai HTTPS.
+- Aktifkan SESSION_SECURE_COOKIE=true.
+- Aktifkan cookie HttpOnly dan SameSite sesuai konfigurasi Laravel.
+- Session lifetime bisa dipersingkat untuk akun admin.
+
+24.7 Password Policy Lebih Kuat
+- Terapkan minimum panjang password.
+- Wajib kombinasi huruf besar, huruf kecil, angka, dan simbol.
+- Tolak password yang terlalu umum.
+- Tambahkan fitur ganti password berkala jika dibutuhkan kebijakan perusahaan.
+
+24.8 Account Lockout dan Deteksi Gagal Login
+- Rate limit login sudah ada, tetapi bisa ditambah account lockout sementara.
+- Jika gagal login berkali-kali, akun dikunci sementara.
+- Admin menerima notifikasi jika ada percobaan login mencurigakan.
+
+24.9 Audit Log Lebih Detail dan Tidak Mudah Dihapus
+- Audit log sebaiknya tidak bisa dihapus dari UI biasa.
+- Jika perlu retensi, hapus lewat kebijakan terjadwal dan tercatat.
+- Audit log penting bisa dikirim ke log eksternal agar tidak hilang jika database bermasalah.
+
+24.10 Monitoring Aktivitas Mencurigakan
+- Tambahkan dashboard keamanan sederhana.
+- Contoh data:
+  - gagal login terbanyak
+  - download file sensitif terbanyak
+  - perubahan data penting terbaru
+  - akses dari IP tidak biasa
+  - aktivitas admin di luar jam kerja
+
+24.11 Approval untuk Aksi Sensitif
+- Beberapa aksi penting bisa dibuat butuh approval dua tahap.
+- Contoh:
+  - hapus sertifikat
+  - hapus user
+  - reset template sertifikat
+  - download backup
+  - ubah pengaturan email
+
+24.12 Backup Encryption
+- File backup berisi database dan file private, sehingga sebaiknya dienkripsi.
+- Backup juga sebaiknya punya password kuat atau encryption key.
+- Download backup tetap hanya admin dan tercatat audit log.
+
+24.13 Backup Offsite
+- Selain backup lokal/private storage, simpan salinan backup ke lokasi lain.
+- Contoh:
+  - cloud storage
+  - server backup internal
+  - storage khusus backup
+- Tujuannya agar data tetap aman jika server utama rusak.
+
+24.14 Proteksi Cron Endpoint
+- Endpoint cron sudah memakai CRON_SECRET.
+- Ke depan bisa ditambah:
+  - rotasi secret berkala
+  - pembatasan IP jika memungkinkan
+  - audit log setiap cron dijalankan
+  - alert jika cron gagal
+
+24.15 Security Header Lebih Lengkap
+- Pastikan header berikut sesuai kebutuhan production:
+  - Content-Security-Policy
+  - X-Frame-Options atau frame-ancestors pada CSP
+  - X-Content-Type-Options
+  - Referrer-Policy
+  - Permissions-Policy
+  - Strict-Transport-Security untuk HTTPS
+
+24.16 Content Security Policy Lebih Ketat
+- CSP membantu mencegah XSS.
+- Untuk production, batasi script, style, image, dan font hanya dari sumber yang dibutuhkan.
+- Jika memakai CDN, masukkan domain CDN secara eksplisit.
+
+24.17 Validasi dan Sanitasi Input Lebih Ketat
+- Semua input user harus divalidasi di server.
+- Field teks panjang seperti catatan, scope, deskripsi, dan nama lembaga harus punya batas panjang.
+- Output di Blade harus tetap memakai escaping default Laravel.
+
+24.18 Least Privilege untuk Database
+- User database production jangan memakai root.
+- Buat user database khusus aplikasi.
+- Berikan hak akses secukupnya.
+- Password database harus kuat dan tidak dibagikan.
+
+24.19 Pemisahan Environment
+- Local, staging, dan production harus punya environment berbeda.
+- Database testing/staging jangan memakai database production.
+- APP_DEBUG wajib false di production.
+
+24.20 Secret Management
+- Secret seperti SMTP password, DB password, CRON_SECRET, dan APP_KEY harus disimpan di environment provider.
+- Jangan menulis secret di dokumentasi, screenshot, GitHub, atau chat publik.
+- Jika secret pernah bocor, segera rotate/ganti.
+
+24.21 Penetration Testing Ringan
+- Lakukan pengujian keamanan dasar:
+  - coba akses route admin tanpa login
+  - coba download file tanpa login
+  - coba upload file ekstensi palsu
+  - coba input script pada form
+  - coba brute force login
+  - coba akses backup dari URL langsung
+
+24.22 Dependency Security Check
+- Jalankan pemeriksaan dependency secara berkala.
+- Untuk PHP gunakan:
+  composer audit
+- Untuk Node gunakan:
+  npm audit
+- Update dependency jika ada vulnerability penting.
+
+24.23 Logging Error Production
+- Jangan tampilkan stack trace ke user production.
+- APP_DEBUG=false wajib.
+- Error detail cukup masuk log.
+- User cukup melihat halaman error umum.
+
+24.24 Retensi Notifikasi dan Audit
+- Notifikasi lama yang sudah dibaca bisa disembunyikan setelah periode tertentu, misalnya 90 hari.
+- Audit log sebaiknya punya retensi lebih panjang karena berhubungan dengan keamanan.
+- Retensi harus jelas antara notifikasi operasional dan audit keamanan.
+
+24.25 Dokumentasi SOP Keamanan
+- Buat SOP untuk:
+  - membuat user admin
+  - menonaktifkan akun petugas keluar
+  - reset password
+  - restore backup
+  - menangani file sertifikat sensitif
+  - menangani kebocoran akun
+
+Ringkasan:
+Peningkatan keamanan paling prioritas adalah mewajibkan 2FA untuk admin, memastikan APP_DEBUG=false di production, memakai storage private yang lebih kuat untuk file besar, mengenkripsi backup, memperketat upload file, dan membuat monitoring aktivitas mencurigakan.
+
+
+25. RINGKASAN UNTUK PRESENTASI
 --------------------------------------------------
 SIG Monitoring Sertifikat adalah aplikasi web berbasis Laravel yang digunakan untuk memantau sertifikat produk semen dan sertifikat sistem ISO pada lokasi/pabrik semen. Aplikasi ini menyediakan dashboard, master data anti-typo, import Excel, export Excel/PDF, dokumen sertifikat otomatis, reminder email, Notifikasi Internal, audit log, dan backup sistem.
 
@@ -980,7 +1147,7 @@ Input utama aplikasi adalah data master, data sertifikat, file sertifikat, file 
 Keunikan aplikasi ini adalah fokus pada domain semen, menggabungkan sertifikat produk dan sistem ISO, memiliki reminder Surveilen/Renewal dua kanal, serta menjaga file sensitif tetap private. Perhitungan data dilakukan oleh PHP Laravel melalui Eloquent, Query Builder, Collection, dan database MySQL/TiDB.
 
 
-25. KESIMPULAN
+26. KESIMPULAN
 --------------------------------------------------
 Proyek ini bukan hanya CRUD sertifikat biasa. Proyek ini adalah sistem monitoring operasional yang menggabungkan:
 - data produk semen
