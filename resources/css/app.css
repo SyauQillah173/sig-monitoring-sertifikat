@@ -1371,6 +1371,14 @@
 
     .ui-landing-pill {
         @apply inline-flex shrink-0 items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[0.66rem] font-bold tracking-[0.16em] text-slate-500 uppercase dark:border-white/10 dark:bg-white/[0.03] dark:text-slate-400;
+        max-width: 100%;
+        min-width: 0;
+        flex-shrink: 1;
+        justify-content: center;
+        text-align: center;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        line-height: 1.35;
     }
 
     .ui-landing-status-list {
@@ -2586,6 +2594,14 @@
 
         .ui-landing-panel {
             @apply rounded-[1.5rem] p-4;
+        }
+
+        .ui-landing-pill {
+            @apply px-2.5 py-1 text-[0.58rem] tracking-[0.11em];
+        }
+
+        .ui-landing-section-head {
+            @apply flex-col;
         }
 
         .ui-landing-panel::after {
