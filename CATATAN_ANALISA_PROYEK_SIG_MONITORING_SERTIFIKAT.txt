@@ -1138,7 +1138,578 @@ Ringkasan:
 Peningkatan keamanan paling prioritas adalah mewajibkan 2FA untuk admin, memastikan APP_DEBUG=false di production, memakai storage private yang lebih kuat untuk file besar, mengenkripsi backup, memperketat upload file, dan membuat monitoring aktivitas mencurigakan.
 
 
-25. RINGKASAN UNTUK PRESENTASI
+25. DIAGRAM ALUR DATABASE UNTUK DBDIAGRAM.IO
+--------------------------------------------------
+Bagian ini berisi rancangan Entity Relationship Diagram (ERD) utama proyek. Format di bawah dibuat dalam DBML agar bisa diterapkan ke dbdiagram.io.
+
+Catatan:
+- Diagram ini fokus pada tabel utama proyek SIG Monitoring Sertifikat.
+- Tabel bawaan Laravel seperti cache, jobs, sessions, password_reset_tokens tetap ada di database, tetapi tidak semua dimasukkan agar diagram tidak terlalu ramai.
+- Tabel legacy seperti certificates/products/categories tetap dicantumkan ringkas karena masih ada di proyek, tetapi UI utama sudah diarahkan ke domain semen.
+- Untuk dbdiagram.io, salin mulai dari baris "Project" sampai "Ref" terakhir.
+
+25.1 Alur Database Utama
+--------------------------------------------------
+Alur relasi utama database:
+
++------------------+
+| users            |
++--------+---------+
+         |
+         | membuat/mengakses
+         v
++------------------+        +------------------+
+| audit_logs       |        | notifications    |
++------------------+        +------------------+
+
++------------------+        +------------------+
+| kategori_semen   | -----> | merek_semen      |
++------------------+        +--------+---------+
+                                      |
+          +---------------------------+---------------------------+
+          |                           |                           |
+          v                           v                           v
++------------------+        +------------------+        +----------------------+
+| sertifikat_sni   |        | sertifikat_tkdn  |        | sertifikat_green_label|
++------------------+        +------------------+        +----------------------+
+          |                           |                           |
+          +-------------+-------------+-------------+-------------+
+                        |
+                        v
+              +----------------------+
+              | cement_reference     |
+              | values               |
+              +----------------------+
+
++------------------+        +------------------+        +--------------------------+
+| lokasi_pabrik    | -----> | sertifikat       | <----- | iso_standards            |
+|                  |        | sistem_semen     |        |                          |
++------------------+        +---------+--------+        +--------------------------+
+                                      |
+                                      v
+                           +--------------------------+
+                           | sertifikat_sistem        |
+                           | audit_events             |
+                           +--------------------------+
+
++------------------+        +------------------+        +--------------------------+
+| perusahaan_semen | -----> | kontak_perusahaan| -----> | certificate_email_logs   |
++------------------+        +------------------+        +--------------------------+
+
++------------------+        +------------------+
+| system_settings  |        | navigation_items |
++------------------+        +------------------+
+
++------------------+        +------------------+
+| stored_files     |        | database_backups |
++------------------+        +------------------+
+
+Makna alur:
+- kategori_semen menjadi induk merek_semen.
+- merek_semen menjadi induk sertifikat produk: SNI, TKDN, dan Green Label.
+- cement_reference_values menjadi kamus/master referensi untuk SNI, komoditi, LSPro, jenis sertifikasi, kemasan, dan peringkat Green Label.
+- lokasi_pabrik dipakai oleh sertifikat produk dan sertifikat sistem ISO.
+- iso_standards menjadi master jenis ISO.
+- sertifikat_sistem_semen menyimpan sertifikat ISO per lokasi/pabrik.
+- sertifikat_sistem_audit_events menyimpan timeline audit ISO.
+- perusahaan_semen dan kontak_perusahaan dipakai untuk email reminder.
+- notifications menyimpan Notifikasi Internal.
+- audit_logs menyimpan riwayat aktivitas.
+- stored_files menyimpan file private saat production Vercel memakai database storage.
+- database_backups menyimpan riwayat backup.
+
+25.2 DBML untuk dbdiagram.io
+--------------------------------------------------
+Salin bagian DBML di bawah ini ke dbdiagram.io:
+
+Project SIG_Monitoring_Sertifikat {
+  database_type: "MySQL / TiDB"
+  Note: "ERD utama aplikasi SIG Monitoring Sertifikat Produk dan Sistem ISO Semen"
+}
+
+Table users {
+  id bigint [pk, increment]
+  name varchar
+  email varchar [unique]
+  email_verified_at timestamp
+  password varchar
+  role varchar
+  is_active boolean
+  two_factor_secret text
+  two_factor_recovery_codes text
+  remember_token varchar
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table roles {
+  id bigint [pk, increment]
+  name varchar
+  guard_name varchar
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table permissions {
+  id bigint [pk, increment]
+  name varchar
+  guard_name varchar
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table model_has_roles {
+  role_id bigint
+  model_type varchar
+  model_id bigint
+}
+
+Table model_has_permissions {
+  permission_id bigint
+  model_type varchar
+  model_id bigint
+}
+
+Table role_has_permissions {
+  permission_id bigint
+  role_id bigint
+}
+
+Table kategori_semen {
+  id bigint [pk, increment]
+  nama_kategori varchar [unique]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table merek_semen {
+  id bigint [pk, increment]
+  kategori_semen_id bigint [not null]
+  nama_merek varchar
+  created_at timestamp
+  updated_at timestamp
+
+  indexes {
+    (kategori_semen_id, nama_merek) [unique]
+  }
+}
+
+Table lokasi_pabrik {
+  id bigint [pk, increment]
+  nama_lokasi varchar [unique]
+  kode varchar [unique]
+  alamat text
+  is_active boolean
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table cement_reference_values {
+  id bigint [pk, increment]
+  type varchar
+  name varchar
+  code varchar
+  description text
+  is_active boolean
+  created_at timestamp
+  updated_at timestamp
+
+  indexes {
+    (type, name) [unique]
+    (type, is_active)
+  }
+}
+
+Table sertifikat_sni {
+  id bigint [pk, increment]
+  merek_semen_id bigint [not null]
+  sni varchar
+  komoditi varchar
+  jenis_sertifikasi varchar
+  lspro varchar
+  lokasi varchar
+  berlaku_sd date
+  file_sertifikat varchar
+  sni_reference_id bigint
+  komoditi_reference_id bigint
+  jenis_sertifikasi_reference_id bigint
+  lspro_reference_id bigint
+  lokasi_pabrik_id bigint
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table sertifikat_tkdn {
+  id bigint [pk, increment]
+  merek_semen_id bigint [not null]
+  sni varchar
+  komoditi varchar
+  persentase_tkdn decimal
+  kemasan varchar
+  lokasi varchar
+  berlaku_sd date
+  file_sertifikat varchar
+  sni_reference_id bigint
+  komoditi_reference_id bigint
+  kemasan_reference_id bigint
+  lokasi_pabrik_id bigint
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table sertifikat_green_label {
+  id bigint [pk, increment]
+  merek_semen_id bigint [not null]
+  sni varchar
+  komoditi varchar
+  peringkat varchar
+  lokasi varchar
+  berlaku_sd date
+  file_sertifikat varchar
+  sni_reference_id bigint
+  komoditi_reference_id bigint
+  peringkat_green_label_reference_id bigint
+  lokasi_pabrik_id bigint
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table iso_standards {
+  id bigint [pk, increment]
+  code varchar [unique]
+  name varchar
+  description text
+  sort_order int
+  is_active boolean
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table sertifikat_sistem_semen {
+  id bigint [pk, increment]
+  lokasi_pabrik_id bigint [not null]
+  iso_standard_id bigint [not null]
+  certificate_number varchar [unique]
+  issuer varchar
+  audit_stage varchar
+  scope varchar
+  issued_at date
+  berlaku_sd date
+  acquisition_year smallint
+  certification_level varchar
+  certification_category varchar
+  process_owner varchar
+  accreditation_number varchar
+  public_url varchar
+  description text
+  file_sertifikat varchar
+  notes text
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table sertifikat_sistem_audit_events {
+  id bigint [pk, increment]
+  sertifikat_sistem_semen_id bigint [not null]
+  user_id bigint
+  audit_type varchar
+  target_date date
+  completed_at date
+  status varchar
+  evidence_file varchar
+  notes text
+  created_at timestamp
+  updated_at timestamp
+
+  indexes {
+    (sertifikat_sistem_semen_id, audit_type) [unique]
+    (status, target_date)
+  }
+}
+
+Table perusahaan_semen {
+  id bigint [pk, increment]
+  nama_perusahaan varchar [unique]
+  kode varchar [unique]
+  alamat text
+  is_active boolean
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table kontak_perusahaan {
+  id bigint [pk, increment]
+  perusahaan_semen_id bigint [not null]
+  nama_pic varchar
+  jabatan varchar
+  email varchar
+  phone varchar
+  is_primary boolean
+  is_active boolean
+  created_at timestamp
+  updated_at timestamp
+
+  indexes {
+    (perusahaan_semen_id, email) [unique]
+  }
+}
+
+Table notification_settings {
+  id bigint [pk, increment]
+  key varchar [unique]
+  value text
+  description varchar
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table certificate_email_notification_logs {
+  id bigint [pk, increment]
+  certificate_type varchar
+  certificate_id bigint
+  kontak_perusahaan_id bigint
+  recipient_email varchar
+  notification_type varchar
+  certificate_expires_at date
+  status varchar
+  error_message text
+  sent_at timestamp
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table notifications {
+  id bigint [pk, increment]
+  user_id bigint
+  certificate_id bigint
+  title varchar
+  message text
+  notification_type varchar
+  status varchar
+  read_at timestamp
+  data json
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table audit_logs {
+  id bigint [pk, increment]
+  user_id bigint
+  auditable_type varchar
+  auditable_id bigint
+  action varchar
+  description varchar
+  old_values json
+  new_values json
+  ip_address varchar
+  user_agent text
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table system_settings {
+  id bigint [pk, increment]
+  key varchar [unique]
+  value text
+  group varchar
+  label varchar
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table navigation_items {
+  id bigint [pk, increment]
+  group_label varchar
+  label varchar
+  route_name varchar
+  icon varchar
+  sort_order int
+  allowed_roles json
+  is_active boolean
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table database_backups {
+  id bigint [pk, increment]
+  user_id bigint
+  filename varchar
+  path varchar
+  disk varchar
+  status varchar
+  triggered_by varchar
+  format varchar
+  size_bytes bigint
+  checksum varchar
+  includes_private_files boolean
+  metadata json
+  error_message text
+  started_at timestamp
+  completed_at timestamp
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table stored_files {
+  id bigint [pk, increment]
+  path varchar [unique]
+  original_name varchar
+  mime_type varchar
+  size bigint
+  contents longtext
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table password_reset_codes {
+  id bigint [pk, increment]
+  email varchar
+  code varchar
+  expires_at timestamp
+  used_at timestamp
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table categories {
+  id bigint [pk, increment]
+  name varchar [unique]
+  slug varchar [unique]
+  description text
+  is_active boolean
+  created_at timestamp
+  updated_at timestamp
+  Note: "Legacy table"
+}
+
+Table products {
+  id bigint [pk, increment]
+  category_id bigint [not null]
+  code varchar [unique]
+  name varchar
+  slug varchar [unique]
+  description text
+  notes text
+  is_active boolean
+  created_at timestamp
+  updated_at timestamp
+  Note: "Legacy table"
+}
+
+Table certificate_types {
+  id bigint [pk, increment]
+  name varchar [unique]
+  slug varchar [unique]
+  description text
+  validity_period_months int
+  is_active boolean
+  created_at timestamp
+  updated_at timestamp
+  Note: "Legacy table"
+}
+
+Table issuers {
+  id bigint [pk, increment]
+  name varchar [unique]
+  code varchar [unique]
+  contact_person varchar
+  email varchar
+  phone varchar
+  website varchar
+  address text
+  notes text
+  is_active boolean
+  created_at timestamp
+  updated_at timestamp
+  Note: "Legacy table"
+}
+
+Table certificates {
+  id bigint [pk, increment]
+  product_id bigint [not null]
+  certificate_type_id bigint [not null]
+  issuer_id bigint [not null]
+  issued_by_user_id bigint
+  updated_by_user_id bigint
+  certificate_number varchar [unique]
+  title varchar
+  issued_at date
+  expires_at date
+  file_path varchar
+  status varchar
+  notes text
+  created_at timestamp
+  updated_at timestamp
+  Note: "Legacy table"
+}
+
+Table certificate_renewals {
+  id bigint [pk, increment]
+  certificate_id bigint [not null]
+  renewed_by_user_id bigint
+  previous_certificate_number varchar
+  new_certificate_number varchar
+  renewal_date date
+  previous_expires_at date
+  new_expires_at date
+  file_path varchar
+  status varchar
+  notes text
+  created_at timestamp
+  updated_at timestamp
+  Note: "Legacy table"
+}
+
+Ref: model_has_roles.role_id > roles.id
+Ref: model_has_permissions.permission_id > permissions.id
+Ref: role_has_permissions.role_id > roles.id
+Ref: role_has_permissions.permission_id > permissions.id
+
+Ref: merek_semen.kategori_semen_id > kategori_semen.id
+
+Ref: sertifikat_sni.merek_semen_id > merek_semen.id
+Ref: sertifikat_sni.sni_reference_id > cement_reference_values.id
+Ref: sertifikat_sni.komoditi_reference_id > cement_reference_values.id
+Ref: sertifikat_sni.jenis_sertifikasi_reference_id > cement_reference_values.id
+Ref: sertifikat_sni.lspro_reference_id > cement_reference_values.id
+Ref: sertifikat_sni.lokasi_pabrik_id > lokasi_pabrik.id
+
+Ref: sertifikat_tkdn.merek_semen_id > merek_semen.id
+Ref: sertifikat_tkdn.sni_reference_id > cement_reference_values.id
+Ref: sertifikat_tkdn.komoditi_reference_id > cement_reference_values.id
+Ref: sertifikat_tkdn.kemasan_reference_id > cement_reference_values.id
+Ref: sertifikat_tkdn.lokasi_pabrik_id > lokasi_pabrik.id
+
+Ref: sertifikat_green_label.merek_semen_id > merek_semen.id
+Ref: sertifikat_green_label.sni_reference_id > cement_reference_values.id
+Ref: sertifikat_green_label.komoditi_reference_id > cement_reference_values.id
+Ref: sertifikat_green_label.peringkat_green_label_reference_id > cement_reference_values.id
+Ref: sertifikat_green_label.lokasi_pabrik_id > lokasi_pabrik.id
+
+Ref: sertifikat_sistem_semen.lokasi_pabrik_id > lokasi_pabrik.id
+Ref: sertifikat_sistem_semen.iso_standard_id > iso_standards.id
+Ref: sertifikat_sistem_audit_events.sertifikat_sistem_semen_id > sertifikat_sistem_semen.id
+Ref: sertifikat_sistem_audit_events.user_id > users.id
+
+Ref: kontak_perusahaan.perusahaan_semen_id > perusahaan_semen.id
+Ref: certificate_email_notification_logs.kontak_perusahaan_id > kontak_perusahaan.id
+
+Ref: notifications.user_id > users.id
+Ref: notifications.certificate_id > certificates.id
+Ref: audit_logs.user_id > users.id
+Ref: database_backups.user_id > users.id
+
+Ref: products.category_id > categories.id
+Ref: certificates.product_id > products.id
+Ref: certificates.certificate_type_id > certificate_types.id
+Ref: certificates.issuer_id > issuers.id
+Ref: certificates.issued_by_user_id > users.id
+Ref: certificates.updated_by_user_id > users.id
+Ref: certificate_renewals.certificate_id > certificates.id
+Ref: certificate_renewals.renewed_by_user_id > users.id
+
+
+26. RINGKASAN UNTUK PRESENTASI
 --------------------------------------------------
 SIG Monitoring Sertifikat adalah aplikasi web berbasis Laravel yang digunakan untuk memantau sertifikat produk semen dan sertifikat sistem ISO pada lokasi/pabrik semen. Aplikasi ini menyediakan dashboard, master data anti-typo, import Excel, export Excel/PDF, dokumen sertifikat otomatis, reminder email, Notifikasi Internal, audit log, dan backup sistem.
 
@@ -1147,7 +1718,7 @@ Input utama aplikasi adalah data master, data sertifikat, file sertifikat, file 
 Keunikan aplikasi ini adalah fokus pada domain semen, menggabungkan sertifikat produk dan sistem ISO, memiliki reminder Surveilen/Renewal dua kanal, serta menjaga file sensitif tetap private. Perhitungan data dilakukan oleh PHP Laravel melalui Eloquent, Query Builder, Collection, dan database MySQL/TiDB.
 
 
-26. KESIMPULAN
+27. KESIMPULAN
 --------------------------------------------------
 Proyek ini bukan hanya CRUD sertifikat biasa. Proyek ini adalah sistem monitoring operasional yang menggabungkan:
 - data produk semen
