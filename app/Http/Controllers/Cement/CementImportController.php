@@ -19,6 +19,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
 use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 use Throwable;
@@ -172,25 +173,41 @@ class CementImportController extends Controller
 
     private function previewForRequest(Request $request): ?array
     {
-        return $request->session()->get(self::SESSION_KEY)
-            ?: Cache::get($this->previewCacheKey($request));
+        $previewId = $request->session()->get(self::SESSION_KEY);
+
+        if (is_array($previewId)) {
+            return $previewId;
+        }
+
+        if (! is_string($previewId) || $previewId === '') {
+            return null;
+        }
+
+        return Cache::store('database')->get($this->previewCacheKey($previewId));
     }
 
     private function storePreviewForRequest(Request $request, array $preview): void
     {
-        $request->session()->put(self::SESSION_KEY, $preview);
-        Cache::put($this->previewCacheKey($request), $preview, now()->addHours(2));
+        $previewId = (string) Str::uuid();
+
+        $request->session()->put(self::SESSION_KEY, $previewId);
+        Cache::store('database')->put($this->previewCacheKey($previewId), $preview, now()->addHours(2));
     }
 
     private function forgetPreviewForRequest(Request $request): void
     {
+        $previewId = $request->session()->get(self::SESSION_KEY);
+
         $request->session()->forget(self::SESSION_KEY);
-        Cache::forget($this->previewCacheKey($request));
+
+        if (is_string($previewId) && $previewId !== '') {
+            Cache::store('database')->forget($this->previewCacheKey($previewId));
+        }
     }
 
-    private function previewCacheKey(Request $request): string
+    private function previewCacheKey(string $previewId): string
     {
-        return self::SESSION_KEY.':'.$request->session()->getId();
+        return self::SESSION_KEY.':'.$previewId;
     }
 
     private function brandFromRow(array $row): MerekSemen

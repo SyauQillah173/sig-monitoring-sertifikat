@@ -31,7 +31,8 @@ class CementImportTest extends TestCase
             $this->actingAs($admin)
                 ->post(route('cement.import.preview'), ['file_excel' => $file])
                 ->assertRedirect(route('cement.import.index'))
-                ->assertSessionHas('success');
+                ->assertSessionHas('success')
+                ->assertSessionHas('cement_certificate_import_preview', fn ($value) => is_string($value));
 
             $this->actingAs($admin)
                 ->get(route('cement.import.index'))
