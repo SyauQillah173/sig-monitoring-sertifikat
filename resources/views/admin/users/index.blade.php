@@ -1,6 +1,6 @@
 <x-layouts::app :title="'Manajemen User'">
     <div class="ui-page">
-        <x-ui.page-header eyebrow="Admin" title="Manajemen User" description="Tambahkan email Gmail yang boleh login ke aplikasi, atur role, dan kirim link reset password.">
+        <x-ui.page-header eyebrow="Admin" title="Manajemen User" description="Tambahkan user, atur role, status login, dan hak akses menu yang muncul setelah user login.">
             <x-slot:actions>
                 <a href="{{ route('admin.users.create') }}" class="ui-button-primary">Tambah User</a>
             </x-slot:actions>
@@ -21,6 +21,7 @@
                             <th>User</th>
                             <th>Email Login</th>
                             <th>Role</th>
+                            <th>Hak Akses</th>
                             <th>Status</th>
                             <th>2FA</th>
                             <th class="text-right">Aksi</th>
@@ -35,6 +36,14 @@
                                 </td>
                                 <td>{{ $managedUser->email }}</td>
                                 <td><span class="ui-badge ui-badge-neutral">{{ $managedUser->roleLabel() }}</span></td>
+                                <td>
+                                    <span class="ui-badge {{ $managedUser->hasFullSystemAccess() ? 'ui-badge-success' : 'ui-badge-info' }}">
+                                        {{ $managedUser->accessModeLabel() }}
+                                    </span>
+                                    @if ($managedUser->has_custom_access)
+                                        <p class="ui-table-row-meta">{{ $managedUser->navigationItems->count() }} menu aktif</p>
+                                    @endif
+                                </td>
                                 <td>
                                     <span class="ui-badge {{ $managedUser->is_active ? 'ui-badge-success' : 'ui-badge-danger' }}">
                                         {{ $managedUser->is_active ? 'Aktif' : 'Nonaktif' }}
@@ -64,7 +73,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="px-6 py-10 text-center text-slate-500 dark:text-slate-400">Belum ada user.</td>
+                                <td colspan="7" class="px-6 py-10 text-center text-slate-500 dark:text-slate-400">Belum ada user.</td>
                             </tr>
                         @endforelse
                     </tbody>

@@ -19,12 +19,16 @@ class UserSeeder extends Seeder
                 'legacy_emails' => ['admin@sig.test', 'abdulahsyauqilah03@gmail.com'],
                 'email' => 'abdullahsyauqillah03@gmail.com',
                 'role' => UserRole::Admin,
+                'is_super_admin' => true,
+                'has_custom_access' => false,
             ],
             [
                 'name' => 'Petugas SIG',
                 'legacy_emails' => ['petugas@sig.test', 'abdulahsyauqilah012@gmail.com'],
                 'email' => 'abdullahsyauqillah012@gmail.com',
                 'role' => UserRole::Petugas,
+                'is_super_admin' => false,
+                'has_custom_access' => false,
             ],
         ];
 
@@ -38,6 +42,8 @@ class UserSeeder extends Seeder
                 'email' => $account['email'],
                 'password' => Hash::make($password),
                 'role' => $account['role'],
+                'is_super_admin' => $account['is_super_admin'],
+                'has_custom_access' => $account['has_custom_access'],
                 'email_verified_at' => now(),
             ])->save();
 

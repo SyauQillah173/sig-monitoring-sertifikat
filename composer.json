@@ -64,8 +64,11 @@
             "@test"
         ],
         "vercel": [
-            "npm install",
+            "@vercel:migrate",
             "npm run build"
+        ],
+        "vercel:migrate": [
+            "@php scripts/vercel-migrate.php"
         ],
         "test": [
             "@php artisan config:clear --ansi",

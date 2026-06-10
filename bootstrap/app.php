@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\AddSecurityHeaders;
 use App\Http\Middleware\EnsureAdminHasTwoFactorEnabled;
+use App\Http\Middleware\EnsureUserCanAccessRoute;
 use App\Http\Middleware\EnsureUserHasRole;
 use App\Http\Middleware\EnsureUserIsActive;
 use App\Http\Middleware\ThrottleSensitiveAuthRequests;
@@ -24,6 +25,7 @@ return Application::configure(basePath: dirname(__DIR__))
             ThrottleSensitiveAuthRequests::class,
             EnsureUserIsActive::class,
             EnsureAdminHasTwoFactorEnabled::class,
+            EnsureUserCanAccessRoute::class,
         ]);
 
         $middleware->alias([

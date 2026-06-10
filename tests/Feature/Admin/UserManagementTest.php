@@ -5,6 +5,8 @@ namespace Tests\Feature\Admin;
 use App\Enums\UserRole;
 use App\Mail\PasswordResetCodeMail;
 use App\Models\User;
+use App\Services\SystemNavigationService;
+use Database\Seeders\CementMonitoringSeeder;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
@@ -96,5 +98,51 @@ class UserManagementTest extends TestCase
 
         Mail::assertSent(PasswordResetCodeMail::class, fn (PasswordResetCodeMail $mail) => $mail->user->is($user)
             && strlen($mail->code) === 6);
+    }
+
+    public function test_full_admin_can_create_limited_admin_with_selected_menu_access(): void
+    {
+        $this->seed([RolePermissionSeeder::class, CementMonitoringSeeder::class]);
+
+        $fullAdmin = User::factory()->create()->assignAppRole(UserRole::Admin);
+        $productMenu = app(SystemNavigationService::class)
+            ->accessItems()
+            ->firstWhere('route_name', 'cement.products.index');
+
+        $this->actingAs($fullAdmin)
+            ->post(route('admin.users.store'), [
+                'name' => 'Admin Produk Terbatas',
+                'email' => 'admin-produk@example.com',
+                'role' => UserRole::Admin->value,
+                'is_active' => '1',
+                'access_mode' => 'custom',
+                'navigation_items' => [$productMenu->id],
+                'password' => 'Password123!',
+                'password_confirmation' => 'Password123!',
+            ])
+            ->assertRedirect(route('admin.users.index'))
+            ->assertSessionHas('success');
+
+        $limitedAdmin = User::query()->where('email', 'admin-produk@example.com')->firstOrFail();
+
+        $this->assertTrue($limitedAdmin->hasAppRole(UserRole::Admin));
+        $this->assertTrue($limitedAdmin->has_custom_access);
+        $this->assertFalse($limitedAdmin->hasFullSystemAccess());
+        $this->assertSame([$productMenu->id], $limitedAdmin->navigationItems()->pluck('navigation_items.id')->all());
+
+        $this->actingAs($limitedAdmin)
+            ->get(route('cement.products.index'))
+            ->assertOk()
+            ->assertSee('Sertifikat Produk')
+            ->assertDontSee('Export Data')
+            ->assertDontSee('Manajemen User');
+
+        $this->actingAs($limitedAdmin)
+            ->get(route('cement.exports.index'))
+            ->assertForbidden();
+
+        $this->actingAs($limitedAdmin)
+            ->get(route('admin.users.index'))
+            ->assertForbidden();
     }
 }

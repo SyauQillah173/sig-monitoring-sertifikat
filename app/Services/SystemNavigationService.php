@@ -6,6 +6,7 @@ use App\Enums\UserRole;
 use App\Models\NavigationItem;
 use App\Models\User;
 use Illuminate\Database\QueryException;
+use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Route;
@@ -80,6 +81,21 @@ class SystemNavigationService
         }
     }
 
+    public function canAccessRoute(User $user, ?string $routeName, Request $request): bool
+    {
+        if (! $routeName || $this->isAlwaysAllowedRoute($routeName, $request)) {
+            return true;
+        }
+
+        if (! $user->has_custom_access || $user->hasFullSystemAccess()) {
+            return true;
+        }
+
+        $items = $this->databaseItemsForUser($user);
+
+        return $items->contains(fn (array $item) => $this->routeMatchesItem($routeName, $item, $request));
+    }
+
     /**
      * @return array<string, string>
      */
@@ -139,26 +155,63 @@ class SystemNavigationService
         ];
     }
 
+    /**
+     * @return Collection<int, NavigationItem>
+     */
+    public function accessItems(): Collection
+    {
+        $this->ensureDefaultsExist();
+
+        try {
+            return NavigationItem::query()
+                ->where('is_active', true)
+                ->whereNotIn('route_name', $this->fullAccessOnlyRouteNames())
+                ->ordered()
+                ->get();
+        } catch (QueryException) {
+            return collect();
+        }
+    }
+
+    /**
+     * @return list<int>
+     */
+    public function defaultAccessItemIdsForRole(UserRole|string|null $role): array
+    {
+        $role = $role instanceof UserRole ? $role->value : (string) $role;
+
+        if ($role === '') {
+            return [];
+        }
+
+        return $this->accessItems()
+            ->filter(fn (NavigationItem $item): bool => in_array($role, $item->allowed_roles ?? [], true))
+            ->pluck('id')
+            ->all();
+    }
+
     private function databaseItemsForUser(User $user): Collection
     {
-        $role = $user->appRole()?->value ?? 'guest';
+        try {
+            $items = NavigationItem::query()
+                ->where('is_active', true)
+                ->whereNotIn('route_name', $this->deprecatedRouteNames())
+                ->ordered()
+                ->get();
+        } catch (QueryException) {
+            return collect();
+        }
 
-        return collect(Cache::remember($this->cacheKey($role), now()->addMinutes(10), function () use ($user): array {
-            try {
-                return NavigationItem::query()
-                    ->where('is_active', true)
-                    ->whereNotIn('route_name', $this->deprecatedRouteNames())
-                    ->ordered()
-                    ->get()
-                    ->filter(fn (NavigationItem $item) => Route::has($item->route_name))
-                    ->filter(fn (NavigationItem $item) => $this->userCanSee($user, $item->toArray()))
-                    ->map(fn (NavigationItem $item) => $item->toArray())
-                    ->values()
-                    ->all();
-            } catch (QueryException) {
-                return [];
-            }
-        }));
+        if ($user->has_custom_access && ! $user->hasFullSystemAccess()) {
+            $allowedIds = $user->navigationItems()->pluck('navigation_items.id')->all();
+            $items = $items->whereIn('id', $allowedIds);
+        }
+
+        return $items
+            ->filter(fn (NavigationItem $item) => Route::has($item->route_name))
+            ->filter(fn (NavigationItem $item) => $this->userCanSee($user, $item->toArray()))
+            ->map(fn (NavigationItem $item) => $item->toArray())
+            ->values();
     }
 
     /**
@@ -166,7 +219,7 @@ class SystemNavigationService
      */
     private function userCanSee(User $user, array $item): bool
     {
-        if ($user->hasAppRole(UserRole::Admin)) {
+        if ($user->hasFullSystemAccess()) {
             return true;
         }
 
@@ -200,6 +253,73 @@ class SystemNavigationService
             : $routeName;
     }
 
+    private function routeMatchesItem(string $routeName, array $item, Request $request): bool
+    {
+        $itemRouteName = (string) ($item['route_name'] ?? '');
+
+        if ($routeName === $itemRouteName) {
+            return true;
+        }
+
+        if ($routeName === 'cement.certificates.document' || $routeName === 'cement.certificates.download') {
+            $type = (string) $request->route('type');
+
+            return match ($itemRouteName) {
+                'cement.products.index' => in_array($type, ['sni', 'tkdn', 'green-label'], true),
+                'cement.system.index' => $type === 'system',
+                default => false,
+            };
+        }
+
+        foreach ($this->routePrefixesForItem($itemRouteName) as $prefix) {
+            if (str_starts_with($routeName, $prefix)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function routePrefixesForItem(string $routeName): array
+    {
+        return match ($routeName) {
+            'cement.products.index' => ['cement.products.'],
+            'cement.system.index' => ['cement.system.', 'cement.system-follow-up.', 'cement.system-audit-evidence.'],
+            'profile.edit' => ['profile.', 'security.'],
+            'notifications.index' => ['notifications.'],
+            'system-settings.index' => ['system-settings.index'],
+            'system-settings.public-appearance.edit' => ['system-settings.public-appearance.'],
+            'system-settings.backups.index' => ['system-settings.backups.'],
+            'cement.maintenance.index' => ['cement.maintenance.'],
+            'cement.import.index' => ['cement.import.'],
+            'cement.exports.index' => ['cement.exports.'],
+            default => str_ends_with($routeName, '.index')
+                ? [substr($routeName, 0, -6).'.']
+                : [],
+        };
+    }
+
+    private function isAlwaysAllowedRoute(string $routeName, Request $request): bool
+    {
+        return $routeName === 'dashboard'
+            || $routeName === 'admin.dashboard'
+            || $routeName === 'petugas.dashboard'
+            || str_starts_with($routeName, 'livewire.')
+            || str_starts_with($routeName, 'password.')
+            || str_starts_with($routeName, 'two-factor.')
+            || $routeName === 'logout'
+            || $request->is(
+                'settings/profile',
+                'settings/security',
+                'user/two-factor-authentication*',
+                'user/confirmed-password-status',
+                'user/confirm-password*',
+            );
+    }
+
     private function cacheKey(string $role): string
     {
         return "navigation.items.{$role}.v2";
@@ -211,5 +331,16 @@ class SystemNavigationService
     private function deprecatedRouteNames(): array
     {
         return ['security.edit'];
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function fullAccessOnlyRouteNames(): array
+    {
+        return [
+            'admin.users.index',
+            'system-settings.navigation.index',
+        ];
     }
 }

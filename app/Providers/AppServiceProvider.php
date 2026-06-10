@@ -2,7 +2,6 @@
 
 namespace App\Providers;
 
-use App\Enums\UserRole;
 use App\Models\User;
 use App\Services\AuditLogger;
 use App\Services\SystemNavigationService;
@@ -56,7 +55,7 @@ class AppServiceProvider extends ServiceProvider
         Date::use(CarbonImmutable::class);
 
         Gate::before(function (User $user) {
-            return $user->hasAppRole(UserRole::Admin) ? true : null;
+            return $user->hasFullSystemAccess() ? true : null;
         });
 
         DB::prohibitDestructiveCommands(

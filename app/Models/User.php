@@ -9,6 +9,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -16,7 +17,7 @@ use Illuminate\Support\Str;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Spatie\Permission\Traits\HasRoles;
 
-#[Fillable(['name', 'email', 'password', 'role', 'is_active'])]
+#[Fillable(['name', 'email', 'password', 'role', 'is_active', 'is_super_admin', 'has_custom_access'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -35,6 +36,8 @@ class User extends Authenticatable
             'password' => 'hashed',
             'role' => UserRole::class,
             'is_active' => 'boolean',
+            'is_super_admin' => 'boolean',
+            'has_custom_access' => 'boolean',
         ];
     }
 
@@ -70,6 +73,25 @@ class User extends Authenticatable
     public function dashboardRouteName(): string
     {
         return $this->appRole()?->dashboardRouteName() ?? 'dashboard';
+    }
+
+    public function isSuperAdmin(): bool
+    {
+        return $this->hasAppRole(UserRole::Admin) && (bool) $this->is_super_admin;
+    }
+
+    public function hasFullSystemAccess(): bool
+    {
+        return $this->hasAppRole(UserRole::Admin) && ! $this->has_custom_access;
+    }
+
+    public function accessModeLabel(): string
+    {
+        if ($this->hasFullSystemAccess()) {
+            return 'Full Access';
+        }
+
+        return $this->has_custom_access ? 'Akses Khusus' : 'Akses Role';
     }
 
     public function hasAppRole(UserRole|string $role): bool
@@ -134,5 +156,11 @@ class User extends Authenticatable
     public function auditLogs(): HasMany
     {
         return $this->hasMany(AuditLog::class);
+    }
+
+    public function navigationItems(): BelongsToMany
+    {
+        return $this->belongsToMany(NavigationItem::class)
+            ->withTimestamps();
     }
 }
