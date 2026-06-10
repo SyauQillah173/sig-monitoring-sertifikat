@@ -1,7 +1,7 @@
 {
   "outputDirectory": "public",
-  "installCommand": "composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader && npm install",
-  "buildCommand": "composer run vercel",
+  "installCommand": "php -r \"copy('https://getcomposer.org/installer', '/tmp/composer-setup.php');\" && php /tmp/composer-setup.php --install-dir=/tmp --filename=composer && /tmp/composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader && npm install",
+  "buildCommand": "php scripts/vercel-migrate.php && npm run build",
   "functions": {
     "api/index.php": {
       "runtime": "vercel-php@0.9.0"
