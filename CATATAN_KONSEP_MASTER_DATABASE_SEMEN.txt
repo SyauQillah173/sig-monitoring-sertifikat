@@ -449,7 +449,8 @@ Catatan GitHub terbaru:
 Perbaikan deployment Vercel:
 - Error Target class [view] sudah ditangani dengan memastikan service provider Laravel yang dibutuhkan runtime Vercel terdaftar saat bootstrap.
 - Error bootstrap/cache harus writable sudah ditangani dengan memakai path cache/session/view yang writable pada runtime Vercel.
-- Error session file read-only sudah dihindari dengan penggunaan session/database pada production.
+- Error session file read-only sudah dihindari dengan session cookie pada runtime Vercel.
+- Data besar seperti preview Import Excel tidak boleh masuk penuh ke session cookie; gunakan database cache.
 - Error SSL TiDB karena cafile lokal Windows sudah diperbaiki agar konfigurasi sertifikat tidak menunjuk path C:\xampp saat di Vercel.
 
 Perbaikan dokumen/download/upload:
@@ -494,5 +495,41 @@ Verifikasi update 25 Mei 2026:
 - php artisan migrate:status --pending menunjukkan tidak ada pending migration.
 - Production domain https://sig-monitoring-sertifikat.vercel.app merespons 200.
 - public/images/Sertifikat.optimized.jpg di production merespons 200 dengan ukuran sekitar 228 KB.
+
+
+20. UPDATE TERKINI 11 JUNI 2026
+--------------------------------------------------
+Perubahan hak akses user:
+- Role aplikasi tetap hanya admin dan petugas.
+- Admin sekarang bisa dibuat sebagai Admin Utama atau Admin Akses Khusus.
+- Admin Utama memiliki akses penuh ke seluruh sistem, termasuk Manajemen User dan Menu Aplikasi.
+- Admin Akses Khusus hanya melihat dan membuka menu yang dipilih oleh Admin Utama.
+- Petugas tetap mengikuti hak akses role petugas.
+- Tabel users ditambah kolom is_super_admin dan has_custom_access.
+- Tabel pivot navigation_item_user menyimpan menu yang boleh diakses user custom.
+- Middleware App\Http\Middleware\EnsureUserCanAccessRoute menjaga agar direct URL tetap mengikuti hak akses menu.
+- Menu Manajemen User dan Menu Aplikasi tidak boleh diberikan ke admin terbatas agar pengaturan hak akses tetap dikendalikan Admin Utama.
+
+Dampak ke master data dan import/export:
+- Import Excel dan Export Data tetap menu admin, tetapi sekarang bisa diberikan atau disembunyikan per user admin.
+- Pemeliharaan Data dan sertifikat produk tetap memakai master database yang sama.
+- Hak akses tidak mengubah konsep master data; hanya mengatur menu dan route yang muncul/terbuka setelah login.
+
+Perbaikan Import Excel production:
+- Preview import tidak lagi menyimpan seluruh isi Excel di session.
+- Session hanya menyimpan token kecil.
+- Data preview disimpan sementara di database cache selama 2 jam.
+- Perubahan ini penting untuk Vercel karena runtime production memakai session cookie; preview Excel besar bisa membuat cookie terlalu besar jika disimpan langsung di session.
+- Test CementImportTest terakhir berhasil: 8 passed, 62 assertions.
+
+Perbaikan Vercel dan database:
+- Database production memakai TiDB Cloud Serverless yang kompatibel MySQL.
+- Migration hak akses user sudah dijalankan dan migrate:status --pending menunjukkan tidak ada pending migration.
+- Auto migrate untuk Vercel production dipindah ke runtime Laravel karena fase install/build Vercel tidak menyediakan command php/composer global pada konfigurasi ini.
+- public/index.php menjalankan migrate --force hanya di Vercel production, memakai lock dan marker /tmp per commit agar tidak berjalan berulang pada setiap request.
+- Commit penting:
+  9e8f6f8 Add user access controls and Vercel migrations
+  b4ca247 Run Vercel migrations at runtime
+  7fe927a Store cement import previews outside session
 
 SELESAI

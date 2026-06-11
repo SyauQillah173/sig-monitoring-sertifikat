@@ -411,6 +411,8 @@ CI/CD:
 - Jangan membuat import Excel kembali auto-create master dari text bebas.
 - Jangan membuat data duplikat masuk ulang saat import Excel.
 - Jangan memaksa user harus klik dropdown Excel; ketik manual boleh selama Preview Data tetap validasi master.
+- Jangan menyimpan preview Import Excel sebagai array besar di session.
+- Jangan mengganti database cache preview import dengan session cookie.
 - Jangan ubah file sertifikat private menjadi public URL.
 - Jangan ubah file bukti audit ISO menjadi public URL.
 - Jangan bocorkan nomor sertifikat/file/bukti audit/catatan internal di landing publik.
@@ -517,12 +519,17 @@ Kondisi terbaru:
 - Import Excel boleh diketik manual atau dropdown, tetapi Preview Data wajib menolak typo/text bebas.
 - Import Excel harus skip data yang sudah ada atau dobel di file.
 - Template Import Excel punya contoh baris 2 dan 3 pada setiap sheet sertifikat.
+- Preview Import Excel disimpan di database cache, session hanya menyimpan token kecil.
+- Jangan simpan array preview Excel besar ke session karena Vercel production memakai session cookie.
 - Email notifikasi foundation sudah ada dan sender mengikuti MAIL_FROM_ADDRESS pada .env.
 - Notifikasi Internal dan Email Reminder ISO sudah ada untuk Surveilen 1, Surveilen 2, dan Renewal.
 - Tombol email/internal masuk ke form konfirmasi web. Pastikan APP_URL sesuai server aktif sebelum kirim email.
 - Reset password memakai kode 6 digit via email.
 - Dokumen ringkasan sertifikat PDF sudah ada dan memakai template background.
 - Admin bisa upload template sertifikat dari Pemeliharaan Data > Template Sertifikat.
+- Manajemen User sudah mendukung Admin Utama/full access dan Admin Akses Khusus per menu.
+- Hak akses custom user disimpan melalui users.is_super_admin, users.has_custom_access, dan pivot navigation_item_user.
+- Middleware EnsureUserCanAccessRoute melindungi direct URL agar mengikuti menu yang diizinkan.
 - File sertifikat asli harus private download.
 - Storage file sertifikat Vercel memakai tabel stored_files lewat CertificateFileStorage.
 - Template PDF default memakai public/images/Sertifikat.optimized.jpg.
@@ -539,10 +546,14 @@ Kondisi terbaru:
 - Backup otomatis sudah ada: database_backups, storage/app/private/backups, command system:backup, command system:backup-cleanup.
 - Role aktif hanya admin dan petugas.
 - Role pimpinan sudah dihapus dari enum, route, seeder, permission, navigation_items, dan database lama lewat migration 2026_05_22_223000_remove_pimpinan_role_from_system.
+- Admin Utama tetap role admin, tetapi full access. Admin kedua bisa role admin dengan akses khusus yang ditentukan Admin Utama.
+- Manajemen User dan Menu Aplikasi hanya untuk Admin Utama/full access.
 - Reminder manual dan otomatis ISO harus menghasilkan email serta Notifikasi Internal.
 - Vercel cron aktif di vercel.json:
   path: /cron/cement-certificate-reminders
   schedule: 15 0 * * *
+- Vercel auto migrate production berjalan di runtime Laravel public/index.php, bukan custom installCommand/buildCommand.
+- Jangan menambahkan installCommand/buildCommand yang memanggil php/composer global di Vercel karena pernah gagal dengan php/composer command not found.
 
 Jangan lakukan:
 - Jangan kembalikan istilah BPOM/halal/pangan/makanan/minuman.
@@ -557,6 +568,7 @@ Jangan lakukan:
 - Jangan mengembalikan GitHub Actions ke actions/checkout@v6 atau setup-node@v6.
 - Jangan memasukkan PHP 8.5 ke matrix CI sebelum dependency project benar-benar siap.
 - Jangan membuat CI wajib memakai secret Flux kalau secret belum tersedia; step Flux harus tetap opsional.
+- Jangan menambahkan custom Vercel installCommand/buildCommand yang memanggil php/composer global tanpa bukti runtime build menyediakannya.
 - Jangan menghapus data/tabel penting tanpa diminta jelas.
 - Jangan restore public/images/Sertifikat.jpg lama berukuran besar.
 - Jangan simpan file sertifikat production ke path public.
@@ -613,6 +625,45 @@ Inti perubahan:
 Catatan produksi:
 - Jika dokumen lama tidak bisa diunduh karena dulu tersimpan di filesystem sementara Vercel, upload ulang file dari menu edit.
 - Jangan tampilkan password/env secret di dokumentasi, log, atau commit.
+
+
+16. UPDATE TERKINI 11 JUNI 2026
+--------------------------------------------------
+Commit production terbaru yang perlu diingat:
+- 9e8f6f8 Add user access controls and Vercel migrations
+- b4ca247 Run Vercel migrations at runtime
+- 7fe927a Store cement import previews outside session
+
+Hak akses user/admin:
+- Role resmi tetap admin dan petugas.
+- Admin Utama adalah user role admin dengan full access.
+- Admin Utama bisa membuat admin lain dengan akses khusus.
+- Admin Akses Khusus hanya melihat/membuka menu yang dipilih Admin Utama.
+- users punya is_super_admin dan has_custom_access.
+- navigation_item_user menyimpan menu yang diberikan ke user custom access.
+- SystemNavigationService memfilter menu berdasarkan custom access.
+- EnsureUserCanAccessRoute memblok direct URL yang tidak sesuai hak akses.
+- Manajemen User dan Menu Aplikasi hanya untuk Admin Utama/full access.
+
+Import Excel:
+- Sumber error production terakhir adalah preview import besar yang disimpan ke session saat Vercel memakai session cookie.
+- Fix: session hanya menyimpan UUID/token preview.
+- Isi preview disimpan ke Cache::store('database') selama 2 jam.
+- Test terbaru: APP_ENV=testing php artisan test tests\Feature\Cement\CementImportTest.php berhasil 8 tests, 62 assertions.
+
+Vercel/database:
+- Database production memakai TiDB Cloud Serverless kompatibel MySQL.
+- Migration hak akses sudah dijalankan; migrate:status --pending terakhir tidak ada pending migration.
+- Auto migrate production berada di public/index.php dan berjalan hanya saat VERCEL_ENV=production.
+- Migration runtime memakai lock dan marker /tmp per commit.
+- Jangan memakai custom installCommand/buildCommand Vercel untuk php/composer global karena pernah gagal:
+  composer: command not found
+  php: command not found
+
+Verifikasi tambahan:
+- npm.cmd run build berhasil.
+- Test UserManagement dan SystemSettings terkait hak akses berhasil.
+- Production root https://sig-monitoring-sertifikat.vercel.app merespons 200.
 
 
 SELESAI

@@ -102,6 +102,7 @@ Dokumentasi:
 --------------------------------------------------
 User dan akses:
 - users
+- navigation_item_user
 - roles
 - permissions
 - model_has_roles
@@ -771,7 +772,8 @@ Perbaikan deploy Vercel:
 - Runtime Vercel memakai vercel-php@0.9.0 melalui api/index.php.
 - Bootstrap Laravel untuk Vercel sudah disesuaikan agar service view tersedia.
 - Path cache/session/view production dibuat writable agar tidak memakai folder read-only.
-- SESSION_DRIVER production diarahkan ke database agar session tidak memakai file read-only.
+- Runtime Vercel mengatur SESSION_DRIVER ke cookie agar tidak memakai session file read-only.
+- Data besar seperti preview Import Excel tidak boleh disimpan penuh di session cookie; gunakan database cache.
 - Konfigurasi TiDB SSL tidak lagi memakai path CA lokal Windows saat berjalan di Vercel.
 
 Storage dokumen baru:
@@ -813,5 +815,59 @@ Verifikasi 25 Mei 2026:
 - php artisan migrate --force berhasil menjalankan stored_files.
 - php artisan migrate:status --pending menunjukkan tidak ada pending migration.
 - Production domain dan asset Sertifikat.optimized.jpg sudah merespons 200.
+
+
+20. UPDATE TERKINI 11 JUNI 2026
+--------------------------------------------------
+Hak akses user/admin:
+- Role aplikasi tetap admin dan petugas.
+- users memiliki kolom is_super_admin dan has_custom_access.
+- navigation_item_user menjadi pivot user custom access ke navigation_items.
+- App\Models\User memiliki relasi navigationItems(), helper isSuperAdmin(), hasFullSystemAccess(), dan accessModeLabel().
+- App\Models\NavigationItem memiliki relasi users().
+- App\Services\SystemNavigationService memfilter menu berdasarkan role dan custom access user.
+- App\Http\Middleware\EnsureUserCanAccessRoute menjaga direct URL agar tetap mengikuti hak akses route/menu.
+- bootstrap/app.php menambahkan middleware EnsureUserCanAccessRoute pada web middleware stack.
+- Admin Utama/full access bisa mengelola user dan semua menu.
+- Admin Akses Khusus hanya melihat/mengakses menu yang dipilih.
+- Route Manajemen User dan Menu Aplikasi dibuat full-access-only agar admin terbatas tidak bisa mengubah hak akses dirinya sendiri.
+- UserManagementController sekarang menyimpan mode akses full/custom dan sinkronisasi pivot navigation_item_user.
+- Form user menampilkan pilihan Admin Utama / Akses Khusus dan checklist menu per grup.
+
+Migration hak akses:
+- database/migrations/2026_06_11_000000_add_user_access_control_to_users_table.php
+- Menambah users.is_super_admin.
+- Menambah users.has_custom_access.
+- Membuat navigation_item_user.
+- Existing admin dibackfill sebagai full access.
+
+Vercel dan auto migrate:
+- Production database memakai TiDB Cloud Serverless, kompatibel MySQL, port 4000, SSL CA tidb-ca.pem.
+- Custom installCommand/buildCommand Vercel yang memanggil php/composer di fase build tidak dipakai karena fase tersebut tidak menyediakan php/composer global.
+- Auto migrate production dipindah ke runtime Laravel di public/index.php.
+- runVercelProductionMigrations() hanya jalan saat VERCEL_ENV=production.
+- Migration runtime memakai Console Kernel migrate --force, lock file, dan marker /tmp/laravel-cache/migrations-{commit}.done.
+- Tujuannya agar deployment baru otomatis memastikan schema siap, tetapi tidak menjalankan migration berulang pada setiap request/container yang sama.
+
+Perbaikan Import Excel:
+- CementImportController tidak lagi menyimpan array preview besar ke session.
+- Session hanya menyimpan UUID preview.
+- Preview disimpan sementara di Cache::store('database') selama 2 jam.
+- Ini mencegah error cookie/session terlalu besar di Vercel production karena runtime memakai SESSION_DRIVER=cookie.
+- Backward compatibility tetap ada jika session lama masih berisi array preview.
+
+Verifikasi 11 Juni 2026:
+- npm.cmd run build berhasil.
+- APP_ENV=testing php artisan test tests\Feature\Admin\UserManagementTest.php tests\Feature\Admin\SystemSettingsTest.php berhasil: 12 tests, 69 assertions.
+- Test akses terbatas admin berhasil: full admin bisa membuat limited admin dan direct URL yang tidak diberi akses forbidden.
+- APP_ENV=testing php artisan test tests\Feature\Cement\CementImportTest.php berhasil: 8 tests, 62 assertions.
+- vendor\bin\pint --test pada file yang diubah berhasil.
+- php artisan migrate:status --pending menunjukkan tidak ada pending migration.
+- Production root https://sig-monitoring-sertifikat.vercel.app merespons 200.
+
+Commit penting:
+- 9e8f6f8 Add user access controls and Vercel migrations
+- b4ca247 Run Vercel migrations at runtime
+- 7fe927a Store cement import previews outside session
 
 SELESAI

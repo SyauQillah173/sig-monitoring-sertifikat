@@ -238,6 +238,10 @@ Catatan:
 - Pengaturan Akun hanya untuk profil, password, security, dan 2FA akun yang sedang login.
 - Pengaturan Sistem adalah CMS admin untuk mengatur sistem global.
 - Petugas tidak bisa membuka Pengaturan Sistem.
+- Admin Utama memiliki akses penuh dan bisa mengatur hak akses user lain.
+- Admin Akses Khusus hanya melihat menu yang diberikan oleh Admin Utama.
+- Menu Manajemen User dan Menu Aplikasi hanya boleh diakses Admin Utama.
+- Jika user tidak diberi akses menu tertentu, direct URL ke route menu tersebut juga akan ditolak.
 
 
 12. RESET PASSWORD DENGAN KODE EMAIL
@@ -733,6 +737,15 @@ Error Vercel "FUNCTION_RESPONSE_PAYLOAD_TOO_LARGE" saat dokumen/download:
 - Untuk Vercel, gunakan CERTIFICATE_UPLOAD_MAX_KB=3072.
 - Jika dokumen lama masih bermasalah, reset template sertifikat atau upload ulang file sertifikat yang diperlukan.
 
+Error Import Excel setelah Preview Data atau Simpan Semua di Vercel:
+- Production Vercel memakai session cookie.
+- Jangan menyimpan isi preview Excel penuh ke session karena cookie bisa terlalu besar.
+- Preview import sekarang disimpan di database cache, session hanya menyimpan token kecil.
+- Pastikan tabel cache tersedia dan migration sudah jalan.
+- Jalankan:
+  php artisan migrate:status --pending
+- Jika masih error, cek apakah cache database aktif dan kirim ulang file Excel dari template terbaru.
+
 Backup gagal karena mysqldump tidak ditemukan:
 - Pastikan XAMPP MySQL terinstall.
 - Cek file:
@@ -853,6 +866,53 @@ Verifikasi terbaru:
 - Paket test cement/import/private download/system certificate/certificate CRUD berhasil: 33 passed, 197 assertions.
 - Paket test report/filter monitoring berhasil: 5 passed, 16 assertions.
 - Commit deploy dokumen terbaru: 98dc10a Make certificate documents Vercel-safe.
+
+
+27. UPDATE TERKINI 11 JUNI 2026
+--------------------------------------------------
+Hak akses user/admin:
+- Role login tetap Admin dan Petugas.
+- Admin Utama memiliki akses penuh.
+- Admin Utama bisa membuat admin lain dengan akses berbeda.
+- Admin Akses Khusus hanya mendapat menu yang dicentang saat dibuat/diedit oleh Admin Utama.
+- Petugas tetap mengikuti akses role petugas.
+- Manajemen User dan Menu Aplikasi hanya untuk Admin Utama.
+
+Cara mengatur hak akses admin:
+1. Login sebagai Admin Utama.
+2. Buka Pengaturan Sistem.
+3. Buka Manajemen User.
+4. Tambah user baru atau edit user admin.
+5. Pilih role Admin.
+6. Pilih Hak Akses:
+   - Admin Utama / Full Access untuk semua menu.
+   - Akses Khusus untuk menu tertentu.
+7. Jika memilih Akses Khusus, centang menu yang boleh muncul dan boleh dibuka user tersebut.
+8. Simpan.
+
+Catatan keamanan hak akses:
+- User tidak bisa mengubah hak akses dirinya sendiri dari form user.
+- Admin terbatas tidak bisa membuka direct URL menu yang tidak diberikan.
+- Hak akses menu disimpan di tabel navigation_item_user.
+- Kolom users.is_super_admin dan users.has_custom_access menentukan mode akses user.
+
+Perbaikan Import Excel production:
+- Preview import sekarang disimpan di database cache, bukan seluruhnya di session.
+- Session hanya menyimpan token preview kecil.
+- Ini mencegah error cookie/session terlalu besar pada Vercel.
+- Test Import Excel terbaru berhasil: 8 passed, 62 assertions.
+
+Perbaikan Vercel dan migration:
+- Database production memakai TiDB Cloud Serverless kompatibel MySQL.
+- Auto migrate production berjalan di runtime Laravel, bukan di install/build command Vercel.
+- public/index.php menjalankan migrate --force hanya saat VERCEL_ENV=production.
+- Migration runtime memakai lock dan marker /tmp per commit agar tidak jalan berulang setiap request.
+- php artisan migrate:status --pending terakhir menunjukkan tidak ada pending migration.
+
+Commit terbaru terkait update ini:
+- 9e8f6f8 Add user access controls and Vercel migrations
+- b4ca247 Run Vercel migrations at runtime
+- 7fe927a Store cement import previews outside session
 
 
 SELESAI

@@ -268,3 +268,32 @@ Perbaikan dokumen ISO:
 
 Verifikasi ISO terbaru:
 - Test Sertifikat Sistem ISO, manual reminder, notifikasi internal, follow up Surveilen/Renewal, upload file database storage, dan PDF dokumen berhasil dalam paket test 33 passed.
+
+
+16. Update Terkini 11 Juni 2026
+--------------------------------------------------
+Hak akses user dan dampaknya untuk Sertifikat Sistem ISO:
+- Role resmi tetap admin dan petugas.
+- Admin Utama memiliki akses penuh dan bisa mengatur user lain dari Manajemen User.
+- Admin Akses Khusus hanya bisa melihat/membuka menu yang dipilih Admin Utama.
+- Sertifikat Sistem, Notifikasi Internal, Pengaturan Akun, Pemeliharaan Data, Import Excel, Export Data, dan Pengaturan Sistem bisa muncul berbeda pada tiap user sesuai hak akses.
+- Direct URL tetap dilindungi middleware EnsureUserCanAccessRoute, jadi user yang menu ISO-nya tidak diberikan tidak bisa membuka route ISO hanya dengan mengetik URL.
+- Manajemen User dan Menu Aplikasi hanya untuk Admin Utama agar admin terbatas tidak bisa menaikkan hak akses sendiri.
+- File ISO dan bukti audit tetap private download serta tetap wajib auth + role sesuai.
+
+Catatan alur ISO:
+- Alur Surveilen 1, Surveilen 2, Renewal, timeline audit, email reminder, dan Notifikasi Internal tidak berubah.
+- Perubahan hak akses hanya mengatur siapa yang bisa melihat/membuka menu dan route setelah login.
+- Admin Utama perlu memastikan admin terbatas yang bertugas mengelola ISO diberi akses ke Sertifikat Sistem dan menu terkait.
+
+Catatan Vercel/database:
+- Production memakai TiDB Cloud Serverless kompatibel MySQL.
+- Migration hak akses user sudah menambah kolom is_super_admin, has_custom_access, dan tabel pivot navigation_item_user.
+- Auto migrate production berjalan di runtime Laravel pada Vercel production karena fase install/build tidak menyediakan php/composer global.
+- public/index.php memakai lock dan marker /tmp per commit agar migration tidak dijalankan berulang setiap request.
+- php artisan migrate:status --pending terakhir menunjukkan tidak ada pending migration.
+
+Catatan Import Excel terkait production:
+- Import Excel produk sekarang menyimpan preview ke database cache, bukan seluruh array ke session.
+- Ini mencegah error cookie/session terlalu besar pada Vercel production.
+- Perubahan ini tidak mengubah import ISO karena ISO tetap dikelola melalui form web.
