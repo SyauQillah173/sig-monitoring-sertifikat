@@ -16,13 +16,20 @@ if ($mysqlSslCa && ! file_exists($mysqlSslCa) && file_exists(base_path('certs/ti
 $mysqlSslOptions = [];
 $mysqlSslMode = strtolower((string) env('DB_SSL_MODE', ''));
 $mysqlSslVerifyServerCertificate = env('DB_SSL_VERIFY_SERVER_CERT');
+$mysqlSslVerifyServerCertificateKey = null;
 
 if ($mysqlSslCa) {
     $mysqlSslOptions[PHP_VERSION_ID >= 80500 ? Mysql::ATTR_SSL_CA : PDO::MYSQL_ATTR_SSL_CA] = $mysqlSslCa;
 }
 
-if ($mysqlSslMode === 'required' && defined('PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT')) {
-    $mysqlSslOptions[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = filter_var(
+if (PHP_VERSION_ID >= 80500 && defined(Mysql::class.'::ATTR_SSL_VERIFY_SERVER_CERT')) {
+    $mysqlSslVerifyServerCertificateKey = Mysql::ATTR_SSL_VERIFY_SERVER_CERT;
+} elseif (defined('PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT')) {
+    $mysqlSslVerifyServerCertificateKey = PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT;
+}
+
+if ($mysqlSslMode === 'required' && $mysqlSslVerifyServerCertificateKey !== null) {
+    $mysqlSslOptions[$mysqlSslVerifyServerCertificateKey] = filter_var(
         $mysqlSslVerifyServerCertificate ?? false,
         FILTER_VALIDATE_BOOL,
     );
