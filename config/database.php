@@ -13,6 +13,21 @@ if ($mysqlSslCa && ! file_exists($mysqlSslCa) && file_exists(base_path('certs/ti
     $mysqlSslCa = base_path('certs/tidb-ca.pem');
 }
 
+$mysqlSslOptions = [];
+$mysqlSslMode = strtolower((string) env('DB_SSL_MODE', ''));
+$mysqlSslVerifyServerCertificate = env('DB_SSL_VERIFY_SERVER_CERT');
+
+if ($mysqlSslCa) {
+    $mysqlSslOptions[PHP_VERSION_ID >= 80500 ? Mysql::ATTR_SSL_CA : PDO::MYSQL_ATTR_SSL_CA] = $mysqlSslCa;
+}
+
+if ($mysqlSslMode === 'required' && defined('PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT')) {
+    $mysqlSslOptions[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = filter_var(
+        $mysqlSslVerifyServerCertificate ?? false,
+        FILTER_VALIDATE_BOOL,
+    );
+}
+
 return [
 
     /*
@@ -69,9 +84,7 @@ return [
             'prefix_indexes' => true,
             'strict' => true,
             'engine' => null,
-            'options' => extension_loaded('pdo_mysql') ? array_filter([
-                (PHP_VERSION_ID >= 80500 ? Mysql::ATTR_SSL_CA : PDO::MYSQL_ATTR_SSL_CA) => $mysqlSslCa,
-            ]) : [],
+            'options' => extension_loaded('pdo_mysql') ? $mysqlSslOptions : [],
         ],
 
         'mariadb' => [
@@ -89,9 +102,7 @@ return [
             'prefix_indexes' => true,
             'strict' => true,
             'engine' => null,
-            'options' => extension_loaded('pdo_mysql') ? array_filter([
-                (PHP_VERSION_ID >= 80500 ? Mysql::ATTR_SSL_CA : PDO::MYSQL_ATTR_SSL_CA) => $mysqlSslCa,
-            ]) : [],
+            'options' => extension_loaded('pdo_mysql') ? $mysqlSslOptions : [],
         ],
 
         'pgsql' => [

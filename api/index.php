@@ -18,7 +18,20 @@ try {
             mkdir($cacheDataDirectory, 0777, true);
         }
 
-        $tidbCaPath = realpath(__DIR__.'/../certs/tidb-ca.pem') ?: __DIR__.'/../certs/tidb-ca.pem';
+        $databaseHost = $_ENV['DB_HOST'] ?? $_SERVER['DB_HOST'] ?? getenv('DB_HOST') ?: '';
+        $configuredSslCa = $_ENV['MYSQL_ATTR_SSL_CA'] ?? $_SERVER['MYSQL_ATTR_SSL_CA'] ?? getenv('MYSQL_ATTR_SSL_CA') ?: '';
+
+        if (str_contains($databaseHost, 'tidbcloud.com') && $configuredSslCa === '') {
+            $tidbCaPath = realpath(__DIR__.'/../certs/tidb-ca.pem') ?: __DIR__.'/../certs/tidb-ca.pem';
+            $_ENV['MYSQL_ATTR_SSL_CA'] = $tidbCaPath;
+            $_SERVER['MYSQL_ATTR_SSL_CA'] = $tidbCaPath;
+            putenv('MYSQL_ATTR_SSL_CA='.$tidbCaPath);
+        }
+
+        if (str_contains($databaseHost, 'aivencloud.com') && str_contains($configuredSslCa, 'tidb-ca.pem')) {
+            unset($_ENV['MYSQL_ATTR_SSL_CA'], $_SERVER['MYSQL_ATTR_SSL_CA']);
+            putenv('MYSQL_ATTR_SSL_CA');
+        }
 
         $runtimeValues = [
             'APP_PACKAGES_CACHE' => $cacheDirectory.'/packages.php',
@@ -27,7 +40,6 @@ try {
             'APP_ROUTES_CACHE' => $cacheDirectory.'/routes.php',
             'APP_EVENTS_CACHE' => $cacheDirectory.'/events.php',
             'VIEW_COMPILED_PATH' => $viewDirectory,
-            'MYSQL_ATTR_SSL_CA' => $tidbCaPath,
             'SESSION_DRIVER' => 'cookie',
             'SESSION_PATH' => '/',
             'CACHE_STORE' => 'file',
