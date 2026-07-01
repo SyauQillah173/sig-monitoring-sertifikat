@@ -45,6 +45,7 @@ try {
             'CACHE_STORE' => 'file',
             'CACHE_PATH' => $cacheDataDirectory,
             'CACHE_LOCK_PATH' => $cacheDataDirectory,
+            'EXCEL_TEMP_PATH' => $cacheDirectory.'/laravel-excel',
             'QUEUE_CONNECTION' => 'sync',
         ];
 
