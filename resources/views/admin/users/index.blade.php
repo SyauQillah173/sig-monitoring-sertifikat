@@ -23,7 +23,6 @@
                             <th>Role</th>
                             <th>Hak Akses</th>
                             <th>Status</th>
-                            <th>2FA</th>
                             <th class="text-right">Aksi</th>
                         </tr>
                     </thead>
@@ -50,11 +49,6 @@
                                     </span>
                                 </td>
                                 <td>
-                                    <span class="ui-badge {{ $managedUser->two_factor_secret ? 'ui-badge-success' : 'ui-badge-danger' }}">
-                                        {{ $managedUser->two_factor_secret ? 'Aktif' : 'Belum aktif' }}
-                                    </span>
-                                </td>
-                                <td>
                                     <div class="flex flex-wrap justify-end gap-2">
                                         <form method="POST" action="{{ route('admin.users.send-reset-link', $managedUser) }}">
                                             @csrf
@@ -73,7 +67,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="px-6 py-10 text-center text-slate-500 dark:text-slate-400">Belum ada user.</td>
+                                <td colspan="6" class="px-6 py-10 text-center text-slate-500 dark:text-slate-400">Belum ada user.</td>
                             </tr>
                         @endforelse
                     </tbody>

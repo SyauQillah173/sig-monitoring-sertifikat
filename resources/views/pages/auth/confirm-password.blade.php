@@ -2,7 +2,7 @@
     <div class="flex flex-col gap-6">
         <x-auth-header
             :title="__('Konfirmasi keamanan akun')"
-            :description="__('Masukkan password akun untuk membuka pengaturan keamanan seperti 2FA, recovery code, dan perubahan password.')"
+            :description="__('Masukkan password akun untuk membuka pengaturan keamanan dan perubahan password.')"
         />
 
         <x-auth-session-status class="text-center" :status="session('status')" />

@@ -309,12 +309,10 @@ class SystemNavigationService
             || $routeName === 'petugas.dashboard'
             || str_starts_with($routeName, 'livewire.')
             || str_starts_with($routeName, 'password.')
-            || str_starts_with($routeName, 'two-factor.')
             || $routeName === 'logout'
             || $request->is(
                 'settings/profile',
                 'settings/security',
-                'user/two-factor-authentication*',
                 'user/confirmed-password-status',
                 'user/confirm-password*',
             );
